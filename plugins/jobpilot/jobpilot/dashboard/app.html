@@ -181,6 +181,10 @@ main{max-width:1240px;margin:0 auto;padding:22px 24px 40px}
 .due-q{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .due-h{font-size:11.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:2px 6px 4px}
 .due-group+.due-group{margin-top:14px}
+.gist{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--ink-2);margin-top:3px}
+.gist .icon-sm{color:var(--accent);margin-top:1px}
+.due-item .gist{white-space:normal}
+.ev.minor .tx{color:var(--ink-2)}
 .mail-item{display:grid;gap:2px;padding-bottom:8px}
 .mail-item+.mail-item{border-top:1px solid var(--grid);padding-top:6px}
 .mail-acts{display:flex;flex-wrap:wrap;gap:6px;padding-left:70px}
@@ -529,7 +533,9 @@ en: {
   mail_got:'received {when}', mail_n:'{n} emails', open_mail:'Open email',
   mail_invite:'Record as interview invite', mail_done:'Replied — stop reminding', mail_hidden:'Email links are hidden in the demo.',
   mail_invited:'Recorded as an interview invitation', mail_answered:'Marked as answered', next_mail:'Reply to recruiter',
-  confirm_q:'Click again to confirm',
+  confirm_q:'Click again to confirm', due_unsched:'Interview · time not set', agreed_mail:'agreed by email', mins:'{n} min',
+  iv_replied:'You replied {when}; waiting for them to confirm a time', iv_reply:'Reply to set a time; the next inbox sync records the agreed time',
+  f_resched:'This moves the earlier time',
   pipeline:'Pipeline', pipeline_sub:'Every application you have sent',
   f_applied:'Applied', f_responded:'Heard back', f_oa:'Assessment', f_interview:'Interview', f_offer:'Offer',
   per_day:'Matches per day', per_day_sub:'Postings admitted to the pool, last 7 days', chart:'Chart', table:'Table', total:'Total', day:'Day',
@@ -620,7 +626,9 @@ zh: {
   mail_got:'{when} 收到', mail_n:'共 {n} 封', open_mail:'打开邮件',
   mail_invite:'记为面试邀请', mail_done:'已回复，不用再提醒', mail_hidden:'演示中隐藏了邮件链接。',
   mail_invited:'已记为面试邀请', mail_answered:'已标记为回复过', next_mail:'回复招聘方',
-  confirm_q:'再点一次确认',
+  confirm_q:'再点一次确认', due_unsched:'面试 · 还没约时间', agreed_mail:'邮件里约定', mins:'{n} 分钟',
+  iv_replied:'你 {when} 回复了，等对方确认时间', iv_reply:'回邮件约时间；对方确认后，下次同步邮件会自动记下时间',
+  f_resched:'这是改期（替换之前的时间）',
   pipeline:'投递漏斗', pipeline_sub:'你投出的每一份申请',
   f_applied:'已投递', f_responded:'有回音', f_oa:'测评', f_interview:'面试', f_offer:'Offer',
   per_day:'每日新匹配', per_day_sub:'近 7 天进入岗位库的岗位', chart:'图表', table:'表格', total:'合计', day:'日期',
@@ -987,6 +995,7 @@ function matchRow(r) {
   </button>`;
 }
 function emptyState(ic, title, text, extra) { return h`<div class="empty">${icon(ic)}<div class="t">${title}</div><div>${text}</div>${extra || ''}</div>`; }
+const gistLine = g => (g ? h`<span class="gist">${icon('spark', 'icon-sm')}<span>${g}</span></span>` : '');
 function mailActs(m) {
   const open = m.mail ? h`<a class="btn btn-sm" href="${safeUrl(m.mail)}" target="_blank" rel="noopener noreferrer">${icon('mail', 'icon-sm')}${t('open_mail')}</a>`
     : m.mail_hidden ? h`<button class="btn btn-sm" data-act="mail-hidden">${icon('mail', 'icon-sm')}${t('open_mail')}</button>` : '';
@@ -998,16 +1007,20 @@ function mailItem(m) {
   return h`<div class="mail-item"><button class="due-item" data-act="open-app" data-id="${m.app_id}">
     <span class="datebox mail">${icon('mail')}</span>
     <span><span class="due-kind">${kind}</span><span class="due-t">${m.company}</span><span class="due-s">${m.role}</span>
-      ${m.subject ? h`<span class="due-q">${m.subject}</span>` : ''}</span></button>
+      ${m.subject ? h`<span class="due-q">${m.subject}</span>` : ''}${gistLine(m.gist)}</span></button>
     <div class="mail-acts">${mailActs(m)}</div></div>`;
 }
-function dueItem(kind, at, title, sub, appId, cls) {
+function dueItem(kind, at, title, sub, appId, cls, ic, extra) {
   const d = parseT(at);
   const mo = d ? d.toLocaleDateString(locale(), {month: 'short'}) : '', dy = d ? d.getDate() : '';
   return h`<button class="due-item" data-act="open-app" data-id="${appId}">
-    <span class="datebox ${cls || ''}">${d ? h`<span class="mo">${mo}</span><span class="dy">${dy}</span>` : icon('mail')}</span>
-    <span><span class="due-kind">${kind}</span><span class="due-t">${title}</span><span class="due-s">${sub}</span></span></button>`;
+    <span class="datebox ${cls || ''}">${d ? h`<span class="mo">${mo}</span><span class="dy">${dy}</span>` : icon(ic || 'mail')}</span>
+    <span><span class="due-kind">${kind}</span><span class="due-t">${title}</span><span class="due-s">${sub}</span>${extra || ''}</span></button>`;
 }
+function ivSub(i) {
+  return [i.role, timeShort(i.time)].concat(i.minutes ? [t('mins', {n: i.minutes})] : [], i.source === 'gmail' ? [t('agreed_mail')] : []).join(' · ');
+}
+function unschedSub(u) { return u.replied_at ? t('iv_replied', {when: dateShort(u.replied_at)}) : t('iv_reply'); }
 async function renderToday() {
   const sum = await api('summary');
   state.cache.summary = sum;
@@ -1016,8 +1029,10 @@ async function renderToday() {
   const lastRun = sum.last_daily ? t('last_run', {when: ago(sum.last_daily.at)}) : (sum.last_collection ? t('last_run', {when: ago(sum.last_collection.finished_at || sum.last_collection.created_at)}) : t('no_run'));
   const due = sum.due || {deadlines: [], interviews: [], followups: []};
   const dueRows = [];
-  (due.interviews || []).filter(i => !i.past).forEach(i => dueRows.push(dueItem(t('due_iv'), i.time, i.company, i.role + ' · ' + timeShort(i.time), i.app_id, 'soon')));
+  (due.interviews || []).filter(i => !i.past).forEach(i => dueRows.push(dueItem(t('due_iv'), i.time, i.company, ivSub(i), i.app_id, 'soon')));
   (due.deadlines || []).forEach(d => dueRows.push(dueItem(t('due_oa') + (d.overdue ? ' · ' + t('overdue') : ''), d.due, d.company, d.role, d.app_id, d.overdue ? 'over' : 'soon')));
+  (due.unscheduled || []).forEach(u => dueRows.push(dueItem(t('due_unsched'), null, u.company, u.role, u.app_id, '', 'clock',
+    h`<span class="due-q">${unschedSub(u)}</span>${gistLine(u.gist)}`)));
   (due.followups || []).slice(0, 4).forEach(f => dueRows.push(dueItem(t('due_fu'), null, f.company, t('fu_days', {n: f.days}), f.app_id)));
   const mails = sum.mail || [];
   const rep = sum.report;
@@ -1250,8 +1265,8 @@ async function renderActivity() {
     const d = e.data || {};
     const link = d.mail ? h`<a href="${safeUrl(d.mail)}" target="_blank" rel="noopener noreferrer">${t('open_mail')} ${icon('ext', 'icon-sm')}</a>`
       : d.mail_hidden ? h`<a href="#" data-act="mail-hidden">${t('open_mail')}</a>` : '';
-    items.push(h`<div class="ev"><span class="tm">${timeShort(e.ts)}</span><span class="ic">${icon(KIND_ICON[e.kind] || 'tag')}</span>
-      <span class="tx">${cap1(e.text)}${link}<span class="kd">${t('kind_' + e.kind)}</span></span></div>`);
+    items.push(h`<div class="ev ${d.minor ? 'minor' : ''}"><span class="tm">${timeShort(e.ts)}</span><span class="ic">${icon(KIND_ICON[e.kind] || 'tag')}</span>
+      <span class="tx">${cap1(e.text)}${link}${gistLine(d.gist)}<span class="kd">${t('kind_' + e.kind)}</span></span></div>`);
   });
   html(el, h`<div class="card"><div class="card-h"><h2>${t('activity')}</h2></div>
     ${items.length ? h`<div class="feed">${items}</div>` : emptyState('clock', t('empty_act_t'), t('empty_act'))}</div>`);
@@ -1344,6 +1359,7 @@ function eventButtons(a) {
 }
 async function openApp(id) {
   const a = await api('app', {id});
+  state.cache.app = a;
   const cur = STEPS.indexOf(a.stage), closed = a.closed;
   const tl = (a.timeline || []).slice().sort((x, y) => String(y.date || y.ts).localeCompare(String(x.date || x.ts)) || String(y.ts).localeCompare(String(x.ts)));
   const key = ['applied', 'oa_invited', 'interview_invited', 'interview_scheduled', 'offer', 'rejected'];
@@ -1355,7 +1371,8 @@ async function openApp(id) {
       ${a.posting ? h`<a href="#" data-act="open-posting" data-id="${a.posting.id}">${t('open_posting')}</a>` : ''}</div></div>
   <div class="d-body">
     <section class="sec"><div class="stepper">${STEPS.map((s, i) => h`<div class="step ${closed && i > cur ? 'closed' : i < cur ? 'done' : i === cur ? 'cur' : ''}"><i></i>${t('stage_' + s)}</div>`)}</div>
-      ${a.next ? h`<div style-hook>${nextBadge(a)}</div>` : ''}</section>
+      ${a.next ? h`<div style-hook>${nextBadge(a)}</div>` : ''}
+      ${a.awaiting ? h`<div class="due-s" style-hook>${t('due_unsched')} · ${unschedSub(a.awaiting)}</div>${gistLine(a.awaiting.gist)}` : ''}</section>
     ${(a.mail || []).length ? h`<section class="sec"><h3>${t('mail_wait')}</h3>${a.mail.map(m => h`<div class="mail-item">
       <div class="due-s">${t('mail_got', {when: dateShort(m.received_at)})}${m.count > 1 ? ' · ' + t('mail_n', {n: m.count}) : ''}${m.subject ? ' · ' + m.subject : ''}</div>
       <div class="acts">${mailActs(m)}</div></div>`)}</section>` : ''}
@@ -1363,18 +1380,21 @@ async function openApp(id) {
       <div id="ev-form" hidden></div></section>
     ${(a.tailored || []).length ? h`<section class="sec"><h3>${t('tailored')}</h3>${a.tailored.map(tailoredFile)}</section>` : ''}
     <section class="sec"><h3>${t('timeline')}</h3><div class="tl">${tl.map(e => h`<div class="tl-i ${key.includes(e.event) ? 'key' : ''}"><span class="d">${dateShort(e.date || e.ts)}</span><i class="m"></i>
-      <span><b>${t('ev_' + e.event)}</b>${e.deadline ? ' · ' + t('f_deadline') + ' ' + dateShort(e.deadline) : ''}${e.time ? ' · ' + dateTime(e.time) : ''}${e.note ? h`<span class="n">${e.note}</span>` : ''}</span></div>`)}</div></section>
+      <span><b>${t('ev_' + e.event)}</b>${e.deadline ? ' · ' + t('f_deadline') + ' ' + dateShort(e.deadline) : ''}${e.time ? ' · ' + dateTime(e.time) : ''}${e.note ? h`<span class="n">${e.note}</span>` : ''}${gistLine(e.gist)}</span></div>`)}</div></section>
   </div>`, 'app', id);
   $('#drawer').querySelectorAll('[style-hook]').forEach(x => { x.removeAttribute('style-hook'); x.style.marginTop = '12px'; });
 }
 function evForm(ev, id) {
   const box = $('#ev-form'); if (!box) return;
   const needsDeadline = ev === 'oa_invited', needsTime = ev === 'interview_scheduled' || ev === 'interview_invited';
+  const cur = state.drawer && state.drawer.kind === 'app' ? state.cache.app : null;
+  const canMove = ev === 'interview_scheduled' && cur && (cur.interviews || []).some(iv => !iv.done);
   box.hidden = false;
   html(box, h`<div class="inline-form"><b>${t('e_' + ev)}</b>
     ${ev !== 'note' ? h`<label>${t('f_date')}<input class="input" type="date" id="ef-date" value="${todayIso()}"></label>` : ''}
     ${needsDeadline ? h`<label>${t('f_deadline')}<input class="input" type="date" id="ef-deadline"></label>` : ''}
     ${needsTime ? h`<label>${t('f_time')}<input class="input" type="datetime-local" id="ef-time"></label>` : ''}
+    ${canMove ? h`<label class="range"><input type="checkbox" id="ef-resched"> ${t('f_resched')}</label>` : ''}
     <label>${t('f_note')}<textarea class="input" id="ef-note" rows="2"></textarea></label>
     <div class="form-row"><button class="btn btn-primary btn-sm" data-act="ev-save" data-ev="${ev}" data-id="${id}">${t('save')}</button>
       <button class="btn btn-sm btn-ghost" data-act="ev-cancel">${t('cancel')}</button></div></div>`);
@@ -1482,6 +1502,7 @@ async function act(el, ev) {
       if (dl && dl.value) body.deadline = dl.value;
       if (tm && tm.value) body.time = tm.value;
       if (nt && nt.value.trim()) body.note = nt.value.trim();
+      const rs = $('#ef-resched'); if (rs && rs.checked) body.rescheduled = true;
       if (body.event === 'interview_invited' && body.time) { const r0 = await post('app/event', Object.assign({}, body, {time: undefined})); if (!r0) return; body.event = 'interview_scheduled'; }
       const r = await post('app/event', body); if (r) { toast(t('saved')); afterWrite(); } return;
     }

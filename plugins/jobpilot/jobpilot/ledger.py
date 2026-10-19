@@ -36,7 +36,7 @@ EVENTS = {
 ORDER = {"planned": 0, "applied": 1, "oa": 2, "interview": 3, "offer": 4}
 TERMINAL = ("rejected", "withdrawn", "closed")
 FIELDS = ("company", "role", "posting_id", "url", "track", "date", "deadline", "time", "note", "minutes", "by",
-          "source", "message_id", "referrer", "location")
+          "source", "message_id", "referrer", "location", "rescheduled")
 
 
 def events(ws, app_id=None):
@@ -115,7 +115,7 @@ def _derive(evs, today=None):
           "location": first.get("location"), "created": first.get("date") or first.get("ts", "")[:10],
           "stage": "planned", "closed": False, "voided": False, "applied_date": None, "last_date": None,
           "deadlines": [], "interviews": [], "notes": [], "timeline": [], "referrer": None, "oa_rounds": 0,
-          "interview_rounds": 0}
+          "interview_rounds": 0, "awaiting_time": False, "invited_date": None}
     best = 0
     for e in evs:
         ev = e.get("event")
@@ -150,13 +150,18 @@ def _derive(evs, today=None):
         if ev in ("interview_invited", "interview_scheduled"):
             if ev == "interview_invited":
                 st["interview_rounds"] += 1
+                st["invited_date"] = date
+            st["awaiting_time"] = not e.get("time")   # an invitation without a time yet
             if e.get("time"):
-                st["interviews"].append({"time": e["time"], "minutes": e.get("minutes"), "done": False})
+                _book(st["interviews"], e)
         if ev == "interview_done":
+            st["awaiting_time"] = False
             for iv in st["interviews"]:
                 if not iv["done"]:
                     iv["done"] = True
                     break
+        if ev == "offer":
+            st["awaiting_time"] = False
         stage = EVENTS.get(ev, (None,))[0]
         if stage in ORDER and ORDER[stage] >= best and not st["closed"]:
             best = ORDER[stage]
@@ -172,6 +177,17 @@ def _derive(evs, today=None):
     return st
 
 
+def _book(interviews, e):
+    """Add an interview time: a rescheduled one replaces the open booking it moves; the same start twice is one."""
+    booking = {"time": e["time"], "minutes": e.get("minutes"), "done": False, "source": e.get("source")}
+    open_ = [iv for iv in interviews if not iv["done"]]
+    when = util.parse_time(e["time"])
+    if e.get("rescheduled") and open_:
+        open_[-1].update(booking)
+    elif not any(when and util.parse_time(iv["time"]) == when for iv in open_):
+        interviews.append(booking)
+
+
 def states(ws):
     grouped = {}
     for e in events(ws):
@@ -184,9 +200,10 @@ def state(ws, app_id):
 
 
 def due(ws, days_ahead=7):
-    """Upcoming deadlines and interviews, and applications that deserve a follow-up."""
+    """Upcoming deadlines and interviews, interviews still waiting for a time, and applications that deserve a
+    follow-up."""
     now = ws.now()
-    out = {"deadlines": [], "interviews": [], "followups": []}
+    out = {"deadlines": [], "interviews": [], "unscheduled": [], "followups": []}
     after = float(ws.cfg["followup"].get("after_days") or 10)
     for st in states(ws).values():
         if st["voided"] or st["closed"]:
@@ -200,14 +217,19 @@ def due(ws, days_ahead=7):
             when = util.parse_time(iv["time"])
             if not iv["done"] and when and (when - now).total_seconds() < days_ahead * 86400:
                 out["interviews"].append({"app_id": st["id"], "company": st["company"], "role": st["role"],
-                                          "time": iv["time"], "past": when < now})
+                                          "time": iv["time"], "minutes": iv.get("minutes"),
+                                          "source": iv.get("source"), "past": when < now})
+        if st["stage"] == "interview" and st["awaiting_time"]:
+            out["unscheduled"].append({"app_id": st["id"], "company": st["company"], "role": st["role"],
+                                       "invited": st["invited_date"]})
         if st["stage"] == "applied":
             age = util.days_between(st.get("last_date") or st.get("applied_date"), now)
             if age is not None and age >= after:
                 out["followups"].append({"app_id": st["id"], "company": st["company"], "role": st["role"],
                                          "days": int(age)})
     out["deadlines"].sort(key=lambda d: d["due"])
-    out["interviews"].sort(key=lambda d: d["time"])
+    out["interviews"].sort(key=lambda d: util.parse_time(d["time"]))
+    out["unscheduled"].sort(key=lambda d: d["invited"] or "")
     out["followups"].sort(key=lambda d: -d["days"])
     return out
 

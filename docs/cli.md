@@ -155,7 +155,7 @@ Applications: add, event, list, show, due.
 
 ```text
 jobpilot app add [-h] [--posting POSTING] [--company COMPANY] [--role ROLE] [--url URL] [--track TRACK] [--note NOTE] [--applied] [--date DATE] [--json]
-jobpilot app event [-h] [--date DATE] [--deadline DEADLINE] [--time TIME] [--minutes MINUTES] [--note NOTE] [--referrer REFERRER] [--json] app_id {tailored,applied,receipt,referral,followup_sent,recruiter_reply,oa_invited,oa_done,interview_invited,interview_scheduled,interview_done,offer,rejected,withdrawn,closed,reopened,edited,note,void}
+jobpilot app event [-h] [--date DATE] [--deadline DEADLINE] [--time TIME] [--minutes MINUTES] [--rescheduled] [--note NOTE] [--referrer REFERRER] [--json] app_id {tailored,applied,receipt,referral,followup_sent,recruiter_reply,oa_invited,oa_done,interview_invited,interview_scheduled,interview_done,offer,rejected,withdrawn,closed,reopened,edited,note,void}
 jobpilot app list [-h] [--all] [--json]
 jobpilot app show [-h] [--json] app_id
 jobpilot app due [-h] [--json]

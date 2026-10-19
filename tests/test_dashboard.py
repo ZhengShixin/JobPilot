@@ -209,6 +209,21 @@ class DashboardTest(unittest.TestCase):
         status, res = self.post("inbox/answered", {"app_id": m["app_id"]})
         self.assertEqual((status, res["answered"]), (200, 0))
 
+    def test_mail_secretary_in_up_next(self):
+        due = self.get("/api/summary")["due"]
+        lumen = next(i for i in due["interviews"] if i["company"] == "Lumen Health AI")
+        self.assertEqual((lumen["source"], lumen["minutes"]), ("gmail", 45))          # agreed by email
+        atlas = next(u for u in due["unscheduled"] if u["company"] == "Atlas Mapping")
+        self.assertTrue(atlas["replied_at"])                                          # you replied, they confirm
+        self.assertIn("phone screen", atlas["gist"])
+        app = self.get("/api/app?id=" + atlas["app_id"])
+        self.assertTrue(app["awaiting"]["replied_at"])
+        self.assertTrue(any(t.get("gist") for t in app["timeline"]))
+        feed = self.get("/api/events?n=300")
+        self.assertTrue(any(e["data"].get("category") == "interview_scheduled" and e["data"].get("gist")
+                            for e in feed))
+        self.assertTrue(any(e["data"].get("category") == "owner_reply" and e["data"].get("minor") for e in feed))
+
     def test_demo_turns_paid_tasks_off(self):
         for name, body in (("run/daily", {}), ("tailor/start", {"posting_id": self.ready_ids(1)[0]}),
                            ("net/find", {"company": "Atlas Mapping"}), ("net/cards", {"company": "Atlas Mapping"})):

@@ -17,11 +17,16 @@ NOW = "2026-10-19T15:00:00Z"
 
 
 def msg(mid, category, app_id=None, company="", subject="Your application", snippet=None, received="2026-10-18T14:00:00Z",
-        deadline=None, interview_time=None, action=False):
-    return {"message_id": mid, "thread_id": "t" + mid, "received_at": received, "sender": "no-reply@example-ats.com",
+        deadline=None, action=False, sender="no-reply@example-ats.com", from_me=False, summary=None, next_step=None,
+        interview=None):
+    return {"message_id": mid, "thread_id": "t" + mid, "received_at": received, "sender": sender,
             "subject": subject, "snippet": snippet or "Thank you for applying to our team.", "category": category,
-            "app_id": app_id, "company": company, "deadline": deadline, "interview_time": interview_time,
-            "action_required": action}
+            "app_id": app_id, "company": company, "deadline": deadline, "action_required": action, "from_me": from_me,
+            "summary": summary, "next_step": next_step, "interview": interview}
+
+
+def agreed(time, sentence, minutes=None, rescheduled=False):
+    return {"time": time, "minutes": minutes, "time_snippet": sentence, "rescheduled": rescheduled}
 
 
 def results(*messages, covered="2026-10-19T15:00:00Z", complete=True):
@@ -58,14 +63,17 @@ class Inbox(support.EnvCase):
             msg("m1", "receipt", self.acme),
             msg("m2", "oa_invite", self.acme, subject="Complete your assessment", deadline="2026-10-25",
                 snippet="Please complete the coding assessment within 7 days.", received="2026-10-18T15:00:00Z"),
-            msg("m3", "interview_invite", self.acme, interview_time="2026-10-28T14:00:00-04:00",
-                snippet="We would like to schedule a technical interview.", received="2026-10-18T16:00:00Z"),
+            msg("m3", "interview_scheduled", self.acme, received="2026-10-18T16:00:00Z",
+                snippet="Your interview is confirmed for Wednesday, October 28 at 2:00 PM ET.",
+                interview=agreed("2026-10-28T14:00:00-04:00",
+                                 "Your interview is confirmed for Wednesday, October 28 at 2:00 PM ET.", 45)),
             msg("m4", "other", None, snippet="New jobs that match your search")))
         self.assertEqual((res["recorded"], res["ignored"], res["unmatched"]), (3, 1, 0))
         st = ledger.state(self.ws, self.acme)
         self.assertEqual(st["stage"], "interview")
         self.assertEqual(st["deadlines"], [{"kind": "oa", "due": "2026-10-25", "done": False}])
-        self.assertEqual(st["interviews"][0]["time"], "2026-10-28T14:00:00-04:00")
+        self.assertEqual(st["interviews"][0], {"time": "2026-10-28T14:00-04:00", "minutes": 45, "done": False,
+                                               "source": "gmail"})
         evs = [e for e in ledger.events(self.ws, self.acme) if e.get("source") == "gmail"]
         self.assertEqual([e["event"] for e in evs], ["receipt", "oa_invited", "interview_invited", "interview_scheduled"])
         self.assertEqual({e["message_id"] for e in evs}, {"m1", "m2", "m3"})
@@ -183,6 +191,126 @@ class Inbox(support.EnvCase):
         cats = inbox.brief(self.ws)["categories"]
         self.assertIn("introductory call", cats["interview_invite"])
         self.assertIn("without inviting", cats["recruiter_reply"])
+
+    def test_a_conversation_by_email(self):
+        """Invitation -> your reply with times -> their confirmation: the agreed time becomes the interview's."""
+        inbox.apply(self.ws, results(msg("c1", "interview_invite", self.acme, sender="Pat Lee <pat@acme.example>",
+                                         snippet="Could you share a few times for a 30-minute phone screen next week?",
+                                         summary="They ask for times for a 30-minute phone screen next week.",
+                                         next_step="pick_time", action=True)))
+        due = ledger.due(self.ws)
+        self.assertEqual([u["app_id"] for u in due["unscheduled"]], [self.acme])
+        self.assertEqual(inbox.mail_state(self.ws, self.acme)["gist"],
+                         "They ask for times for a 30-minute phone screen next week.")
+        inbox.apply(self.ws, results(msg("c2", "owner_reply", self.acme, sender="Jordan <jordan@example.com>",
+                                         from_me=True, received="2026-10-18T18:00:00Z",
+                                         snippet="I am free Tuesday or Wednesday afternoon next week.",
+                                         summary="You offered Tuesday or Wednesday afternoon; waiting for them.",
+                                         next_step="wait", action=True)))
+        state = inbox.mail_state(self.ws, self.acme)
+        self.assertEqual(state, {"gist": "They ask for times for a 30-minute phone screen next week.",
+                                 "replied_at": "2026-10-18T18:00:00Z"})      # your own mail is the "replied" line
+        self.assertEqual(ledger.events(self.ws, self.acme)[-1]["event"], "note")
+        self.assertFalse(inbox._seen(self.ws)["c2"]["action_required"])     # your own mail never waits on you
+        inbox.apply(self.ws, results(msg("c3", "interview_scheduled", self.acme, sender="Pat Lee <pat@acme.example>",
+                                         received="2026-10-19T13:00:00Z",
+                                         snippet="Great, let's do Tuesday, October 27 at 3:00 PM Eastern.",
+                                         summary="Phone screen set for Tuesday 3 PM; prepare.", next_step="prepare",
+                                         interview=agreed("2026-10-27T15:00:00-04:00",
+                                                          "Great, let's do Tuesday, October 27 at 3:00 PM Eastern.",
+                                                          30))))
+        evs = [e["event"] for e in ledger.events(self.ws, self.acme)]
+        self.assertEqual(evs[-2:], ["note", "interview_scheduled"])          # no second invitation
+        st = ledger.state(self.ws, self.acme)
+        self.assertEqual((st["interviews"][0]["time"], st["interviews"][0]["minutes"]), ("2026-10-27T15:00-04:00", 30))
+        self.assertEqual(ledger.due(self.ws)["unscheduled"], [])
+        self.assertEqual(ledger.due(self.ws, days_ahead=30)["interviews"][0]["source"], "gmail")
+        feed = {e["data"]["message_id"]: e for e in util.jsonl_read(self.ws.events_path)
+                if (e.get("data") or {}).get("message_id")}
+        self.assertIn("interview time agreed by email: 2026-10-27 15:00", feed["c3"]["text"])
+        self.assertTrue(feed["c2"]["data"]["minor"])
+        self.assertEqual(feed["c1"]["data"]["gist"], "They ask for times for a 30-minute phone screen next week.")
+
+    def test_an_agreed_time_must_be_stated(self):
+        cases = (("s1", "Looking forward to speaking with you soon!", "2026-10-27T15:00:00-04:00"),   # no hour
+                 ("s2", "Let's do Tuesday at 4:00 PM.", "2026-10-27T15:00:00-04:00"),              # another hour
+                 ("s3", "Let's do Wednesday at 3:00 PM.", "2026-10-27T15:00:00-04:00"),            # another day
+                 ("s4", "See you on October 27 at 3pm.", "2027-10-27T15:00:00-04:00"))             # a year away
+        for mid, sentence, when in cases:
+            res = inbox.apply(self.ws, results(msg(mid, "interview_scheduled", self.acme, snippet=sentence,
+                                                   interview=agreed(when, sentence))))
+            self.assertTrue(any(mid in p and "not an agreed time" in p for p in res["problems"]), res["problems"])
+        st = ledger.state(self.ws, self.acme)
+        self.assertEqual((st["stage"], st["interviews"]), ("interview", []))   # recorded as invitations only
+        self.assertEqual(inbox._seen(self.ws)["s1"]["category"], "interview_invite")
+        mine = inbox.apply(self.ws, results(msg("s5", "interview_scheduled", self.acme, from_me=True,
+                                                snippet="Tuesday at 4pm works for me.",
+                                                interview=agreed("2026-10-27T15:00:00-04:00", "Tuesday at 4pm works.",
+                                                                 ))))
+        self.assertEqual(mine["recorded"], 1)
+        self.assertEqual(inbox._seen(self.ws)["s5"]["category"], "owner_reply")
+        ok = inbox.apply(self.ws, results(msg("s6", "interview_scheduled", self.acme, from_me=True,
+                                              snippet="Tuesday at 3pm works for me, talk then!",
+                                              interview=agreed("2026-10-27T15:00", "Tuesday at 3pm works for me"))))
+        self.assertEqual(ok["agreed"][0]["time"], "2026-10-27T15:00-04:00")    # no offset: the workspace's zone
+
+    def test_messages_you_sent(self):
+        res = inbox.apply(self.ws, results(
+            msg("o1", "receipt", self.acme, from_me=True, snippet="Thanks for confirming, I look forward to it."),
+            msg("o2", "owner_reply", self.acme, snippet="Thanks for your time on the call today!")))
+        self.assertEqual((res["recorded"], res["rejected"]), (1, 1))
+        self.assertEqual(inbox._seen(self.ws)["o1"]["category"], "owner_reply")
+        self.assertNotIn("o2", inbox._seen(self.ws))
+        self.assertTrue(any("owner_reply from someone else" in p for p in res["problems"]))
+        cfg = support.CONFIG + '\n[inbox]\nmy_addresses = ["Jordan.Rivera@Example.com"]\n'
+        (self.ws.root / "jobpilot.toml").write_text(cfg)
+        self.ws.reload()
+        self.assertEqual(inbox.brief(self.ws)["my_addresses"], ["jordan.rivera@example.com"])
+        res = inbox.apply(self.ws, results(msg("o3", "recruiter_reply", self.acme, action=True,
+                                               sender="Jordan Rivera <jordan.rivera@example.com>",
+                                               snippet="Happy to share more details about my projects.")))
+        seen = inbox._seen(self.ws)["o3"]
+        self.assertEqual((seen["category"], seen["from_me"], seen["action_required"]), ("owner_reply", True, False))
+
+    def test_your_email_reply_settles_a_waiting_mail(self):
+        inbox.apply(self.ws, results(msg("w1", "recruiter_reply", self.acme, action=True,
+                                         snippet="Could you tell me your preferred start date?")))
+        self.assertEqual(len(inbox.waiting(self.ws)), 1)
+        inbox.apply(self.ws, results(msg("w2", "owner_reply", self.acme, from_me=True, received="2026-10-18T20:00:00Z",
+                                         snippet="I could start in early January.")))
+        self.assertEqual(inbox.waiting(self.ws), [])
+
+    def test_summaries_are_cleaned(self):
+        self.assertEqual(inbox.clean_summary("  They ask for two times\nnext week. "), "They ask for two times next week.")
+        for bad in ("See https://example.com/apply", "Write to pat@acme.example", "Base pay $120,000",
+                    "Call 555 0199", "Code 123456 inside"):
+            self.assertIsNone(inbox.clean_summary(bad), bad)
+        res = inbox.apply(self.ws, results(msg("g1", "recruiter_reply", self.acme, snippet="Here is the salary band.",
+                                               summary="They shared a pay range of $150k.")))
+        self.assertIsNone(inbox._seen(self.ws)["g1"]["summary"])
+        self.assertEqual(res["recorded"], 1)
+
+    def test_a_rescheduled_time_replaces_the_booking(self):
+        ledger.record(self.ws, self.acme, "interview_invited")
+        ledger.record(self.ws, self.acme, "interview_scheduled", time="2026-10-27T15:00:00-04:00")
+        ledger.record(self.ws, self.acme, "interview_scheduled", time="2026-10-27T15:00-04:00")   # the same start
+        self.assertEqual(len(ledger.state(self.ws, self.acme)["interviews"]), 1)
+        inbox.apply(self.ws, results(msg("r1", "interview_scheduled", self.acme,
+                                         snippet="Could we move it to Thursday, October 29 at 10:30 AM?",
+                                         interview=agreed("2026-10-29T10:30:00-04:00",
+                                                          "Could we move it to Thursday, October 29 at 10:30 AM?",
+                                                          rescheduled=True))))
+        ivs = ledger.state(self.ws, self.acme)["interviews"]
+        self.assertEqual([iv["time"] for iv in ivs], ["2026-10-29T10:30-04:00"])
+        self.assertTrue(ledger.events(self.ws, self.acme)[-1]["rescheduled"])
+
+    def test_brief_reads_sent_mail_and_names_the_summary_language(self):
+        b = inbox.brief(self.ws)
+        self.assertNotIn("-in:sent", " ".join(b["queries"]))
+        self.assertEqual((b["summary_language"], b["timezone"], b["my_addresses"]),
+                         ("English", "America/New_York", []))
+        self.assertIn("owner_reply", b["categories"])
+        self.assertIn("interview", b["output_schema"]["properties"]["messages"]["items"]["properties"])
 
     def test_invalid_results_record_nothing(self):
         bad = results(msg("z1", "receipt", self.acme))

@@ -13,6 +13,7 @@ T = {
         "track_line": "**{name}**: {admitted} admitted out of {seen} new postings",
         "due": "Due soon", "nothing_due": "Nothing due in the next 7 days.",
         "oa": "Assessment for {company} ({role}) due {due}", "iv": "Interview with {company} ({role}) at {time}",
+        "unsched": "Interview with {company} ({role}): no time agreed yet",
         "fu": "Follow up on {company} ({role}): applied {days} days ago, no answer yet",
         "pipeline": "Pipeline", "queue": "{n} postings ready in the queue",
         "funnel": "{applied} applied · {oa} assessments · {interview} interviews · {offer} offers · {open} open",
@@ -28,6 +29,7 @@ T = {
         "track_line": "**{name}**：新岗位 {seen} 个，入库 {admitted} 个",
         "due": "即将到期", "nothing_due": "未来 7 天没有到期事项。",
         "oa": "{company}（{role}）的测评 {due} 截止", "iv": "{company}（{role}）面试：{time}",
+        "unsched": "{company}（{role}）面试：还没约定时间",
         "fu": "跟进 {company}（{role}）：投递已 {days} 天，还没有回复",
         "pipeline": "投递进展", "queue": "队列里有 {n} 个可投岗位",
         "funnel": "已投 {applied} · 测评 {oa} · 面试 {interview} · offer {offer} · 进行中 {open}",
@@ -71,7 +73,7 @@ def build(ws, date=None, collect=None, review=None, problems=None):
         lines += ["", t["none_new"]]
     lines += ["", "## " + t["due"], ""]
     items = [t["oa"].format(**d) for d in due["deadlines"]] + [t["iv"].format(**d) for d in due["interviews"]] + \
-        [t["fu"].format(**d) for d in due["followups"][:5]]
+        [t["unsched"].format(**d) for d in due["unscheduled"]] + [t["fu"].format(**d) for d in due["followups"][:5]]
     lines += ["- " + x for x in items] or [t["nothing_due"]]
     lines += ["", "## " + t["pipeline"], "", "- " + t["queue"].format(n=queue_n), "- " + t["funnel"].format(**fun)]
     lines += ["", "## " + t["spend"], "", "- " + t["spend_line"].format(today=money["today"], cap=money["today_cap"],

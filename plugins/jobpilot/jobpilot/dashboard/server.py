@@ -274,6 +274,14 @@ def _waiting(ws):
     return rows
 
 
+def _due(ws):
+    """ledger.due plus, for an interview still waiting for a time, the newest email summary and when you replied."""
+    due = ledger.due(ws)
+    for u in due.get("unscheduled") or []:
+        u.update(_call("inbox", "mail_state", ws, u["app_id"], default={}) or {})
+    return due
+
+
 # ---------------------------------------------------------------- read views
 
 class Views:
@@ -334,7 +342,7 @@ class Views:
         week_ago = (ws.now() - timedelta(days=7)).date().isoformat()
         fun = ledger.funnel(ws)
         responded = sum(1 for s in apps if s["applied"] and s["responded"])
-        due = ledger.due(ws)
+        due = _due(ws)
         by_track = []
         for t in tracks:
             by_track.append({**t, "new_today": new_today[t["id"]],
@@ -452,10 +460,16 @@ class Views:
         data["tailored"] = [f for f in _tailored(ws) if st.get("posting_id")
                             and str(f.get("posting_id") or "") == str(st["posting_id"])]
         data["mail"] = [r for r in _waiting(ws) if r["app_id"] == st["id"]]
+        gists = _call("inbox", "summaries", ws, default={}) or {}
+        for t in data["timeline"]:
+            if t.get("source") == "gmail" and gists.get(t.get("message_id")):
+                t["gist"] = gists[t["message_id"]]
+        if st["stage"] == "interview" and st.get("awaiting_time") and not st["closed"]:
+            data["awaiting"] = _call("inbox", "mail_state", ws, st["id"], default={}) or {}
         return data
 
     def due(self, q):
-        return ledger.due(self.ws)
+        return _due(self.ws)
 
     # -- feed and reports
     def events(self, q):
@@ -647,6 +661,8 @@ class Writes:
                 fields[key] = value
         if body.get("minutes"):
             fields["minutes"] = _int(body.get("minutes"), None, 5, 600)
+        if body.get("rescheduled") is True and event == "interview_scheduled":
+            fields["rescheduled"] = True
         if fields.get("date") and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fields["date"]):
             raise ApiError(400, "date must look like 2026-10-19")
         for key in ("deadline", "time"):

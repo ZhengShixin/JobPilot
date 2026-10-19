@@ -280,7 +280,7 @@ def cmd_app(ws, args):
         return out(args, ledger.state(ws, app_id), "%s %s — %s (%s)" % (app_id, company, role,
                                                                           ledger.state(ws, app_id)["stage"]))
     if args.action == "event":
-        fields = {k: getattr(args, k) for k in ("date", "deadline", "time", "note", "referrer", "minutes")
+        fields = {k: getattr(args, k) for k in ("date", "deadline", "time", "note", "referrer", "minutes", "rescheduled")
                   if getattr(args, k, None)}
         ledger.record(ws, args.app_id, args.event, **fields)
         st = ledger.state(ws, args.app_id)
@@ -453,6 +453,7 @@ def parser():
     q.add_argument("--deadline", help="assessment deadline (YYYY-MM-DD or ISO time)")
     q.add_argument("--time", help="interview time (ISO, e.g. 2026-11-03T14:00)")
     q.add_argument("--minutes", type=int)
+    q.add_argument("--rescheduled", action="store_true", help="the new time replaces the open interview's time")
     q.add_argument("--note")
     q.add_argument("--referrer", help="who referred you (initials are enough)")
     q = asub.add_parser("list")

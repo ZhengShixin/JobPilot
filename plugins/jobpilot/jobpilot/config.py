@@ -101,7 +101,7 @@ DEFAULTS = {
         "timeout_seconds": 900,        # how long to wait for one Apify people search
         "ai_timeout_seconds": 600,     # one net-review / net-writer run
     },
-    "inbox": {"lookback_days": 14, "label": ""},
+    "inbox": {"lookback_days": 14, "label": "", "my_addresses": []},   # my_addresses: mail from them is yours
     "followup": {"after_days": 10},
     "dashboard": {"port": 8765},
     "notify": {"command": ""},

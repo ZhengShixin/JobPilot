@@ -719,20 +719,17 @@ APPS = [
         (26, "applied", {}), (26, "receipt", {}), (22, "oa_invited", {"deadline": 19}), (20, "oa_done", {}),
         (16, "interview_invited", {}), (16, "interview_scheduled", {"time": (14, 14)}), (14, "interview_done", {}),
         (11, "interview_scheduled", {"time": (9, 10)}), (9, "interview_done", {}), (2, "offer", {})]),
-    ("Lumen Health AI", "Data Scientist", "ds", [
-        (18, "applied", {}), (15, "recruiter_reply", {}), (12, "interview_invited", {}),
-        (1, "interview_scheduled", {"time": (-2, 14)})]),
+    ("Lumen Health AI", "Data Scientist", "ds", [(18, "applied", {})]),          # then by email: _inbox
     ("Vertex Mobility", "Machine Learning Engineer, Perception", "mle", [
         (14, "applied", {}), (10, "oa_invited", {"deadline": 7}), (8, "oa_done", {}), (5, "interview_invited", {}),
         (4, "interview_scheduled", {"time": (3, 11)}), (3, "interview_done", {})]),
-    ("Cobalt Systems", "Applied Scientist", "as", [
-        (9, "applied", {}), (1, "oa_invited", {"deadline": -3})]),
+    ("Cobalt Systems", "Applied Scientist", "as", [(9, "applied", {})]),
     ("Bluefin Capital", "Data Scientist", "ds", [
         (12, "applied", {}), (9, "oa_invited", {"deadline": 6}), (7, "oa_done", {})]),
     ("Harborview Bank", "Machine Learning Engineer", "mle", [
         (21, "applied", {}), (17, "interview_invited", {}), (16, "interview_scheduled", {"time": (15, 13)}),
         (15, "interview_done", {}), (10, "rejected", {})]),
-    ("Pinecrest Insurance", "Data Scientist, Claims", "ds", [(20, "applied", {}), (11, "rejected", {})]),
+    ("Pinecrest Insurance", "Data Scientist, Claims", "ds", [(20, "applied", {})]),
     ("Orbit Commerce", "Machine Learning Engineer, Recommendations", "mle", [(13, "applied", {})]),
     ("Aurora Climate", "Applied Scientist", "as", [(4, "applied", {}), (4, "receipt", {})]),
     ("Summit Payments", "Machine Learning Engineer", "mle", [(0, "applied", {})]),
@@ -740,7 +737,7 @@ APPS = [
     ("Silverline Media", "Data Scientist, Content", "ds", [(30, "applied", {}), (2, "closed", {})]),
     ("Granite Health", "Machine Learning Engineer, Imaging", "mle", []),
     ("Atlas Mapping", "Applied Scientist, Search Relevance", "as", [
-        (7, "referral", {"referrer": "M.C."}), (6, "applied", {}), (3, "recruiter_reply", {})]),
+        (7, "referral", {"referrer": "M.C."}), (6, "applied", {})]),
     ("Nimbus Cloud", "Machine Learning Engineer", "mle", []),
     ("Copperleaf Foods", "Data Scientist", "ds", []),
 ]
@@ -797,27 +794,77 @@ def _applications(d):
 
 
 def _inbox(d):
-    """Gmail tracking the way /jobpilot:inbox records it: fictional emails, checked and recorded by inbox.apply."""
+    """Gmail tracking the way /jobpilot:inbox records it: fictional emails, checked and recorded by inbox.apply (an
+    interview time agreed by email, your reply waiting for a confirmation, a recruiter's question waiting for you)."""
     try:
         from . import inbox
     except ImportError:
         return
     ws = d.ws
     ids = {st["company"]: st["id"] for st in ledger.states(ws).values()}
+    me = "Jordan Rivera <jordan.rivera@example.com>"
     batches = {}
 
-    def mail(n, company, category, ago, hour, subject, snippet, sender, **extra):
+    def mail(n, company, category, ago, hour, sender, subject, snippet, summary, next_step, **extra):
         when = d.day(ago, hour, 20)
         msg = {"message_id": "19%014x" % (0x2a1b3c4d5e6f00 + n), "thread_id": "19%014x" % (0x2a1b3c4d5e0000 + n),
                "received_at": util.stamp(when), "sender": sender, "subject": subject, "snippet": snippet,
                "category": category, "app_id": ids[company], "company": company, "deadline": None,
-               "interview_time": None, "action_required": False}
+               "action_required": False, "from_me": sender == me, "summary": summary, "next_step": next_step,
+               "interview": None}
         msg.update(extra)
         batches.setdefault(ago, []).append(msg)
 
-    mail(1, "Aurora Climate", "recruiter_reply", 1, 16, "Quick question about your application",
+    # Lumen Health AI: a recruiter's note, an invitation, your reply with times, then their confirmation
+    lumen = "Priya Shah <priya.shah@lumen-health.example>"
+    mail(1, "Lumen Health AI", "recruiter_reply", 15, 11, lumen, "Your application: Data Scientist",
+         "Your forecasting background caught our eye, and I have shared your resume with the hiring manager.",
+         d.zh("The recruiter liked your forecasting work and passed your resume to the hiring manager; nothing to do "
+              "yet.", "招聘方看好你的预测建模经历，已把简历转给用人经理；暂时不用做什么。"), "wait")
+    mail(2, "Lumen Health AI", "interview_invite", 12, 10, lumen, "Interview: Data Scientist",
+         "We would like to invite you to a 45-minute interview with the data science team. Could you send a few times "
+         "that work for you?", d.zh("They invite you to a 45-minute interview with the data science team and ask "
+                                    "for your times.", "对方邀请你和数据科学团队面试 45 分钟，请你给几个时间。"),
+         "pick_time", action_required=True)
+    mail(3, "Lumen Health AI", "owner_reply", 2, 9, me, "Re: Interview: Data Scientist",
+         "Thank you for the invitation! I am available on Wednesday or Thursday afternoon this week.",
+         d.zh("You offered Wednesday or Thursday afternoon; waiting for them to pick one.",
+              "你给了周三或周四下午两个时间，等对方选。"), "wait")
+    at = (d.now + timedelta(days=2)).replace(hour=14, minute=0, second=0, microsecond=0)
+    sentence = "Confirmed: %s, %s %d at 2:00 PM Eastern, 45 minutes on video." % (
+        at.strftime("%A"), at.strftime("%B"), at.day)
+    mail(4, "Lumen Health AI", "interview_scheduled", 1, 15, lumen, "Re: Interview: Data Scientist", sentence,
+         d.zh("Interview confirmed for %s 2:00 PM (45 minutes, video); prepare." % at.strftime("%A"),
+              "面试定在周%s下午 2:00（45 分钟，视频）；准备一下。" % "一二三四五六日"[at.weekday()]),
+         "prepare", interview={"time": at.isoformat(timespec="minutes"), "minutes": 45, "time_snippet": sentence,
+                               "rescheduled": False})
+    # Atlas Mapping: a phone-screen invitation; you replied with times and wait for a confirmation
+    atlas = "Leo Park <leo.park@atlas-mapping.example>"
+    mail(5, "Atlas Mapping", "interview_invite", 3, 13, atlas, "Applied Scientist: next steps",
+         "Would you be available for a 30-minute phone screen next week? Please send a few times that work for you.",
+         d.zh("They invite you to a 30-minute phone screen next week and ask for your availability.",
+              "对方邀请你下周电话初筛 30 分钟，请你给几个时间。"), "pick_time", action_required=True)
+    mail(6, "Atlas Mapping", "owner_reply", 1, 19, me, "Re: Applied Scientist: next steps",
+         "Thank you, I would be glad to talk. I am free Tuesday or Wednesday afternoon next week, any time after "
+         "1 PM Eastern.", d.zh("You offered Tuesday or Wednesday afternoon next week; waiting for them to confirm a "
+                               "time.", "你给了下周二或周三下午的时间，等对方确认。"), "wait")
+    # Aurora Climate: a recruiter's question that waits for your answer
+    mail(7, "Aurora Climate", "recruiter_reply", 1, 16, "Dana Whitfield <dana.whitfield@aurora-climate.example>",
+         "Quick question about your application",
          "Before I share your resume with the hiring manager, could you tell me which of our two science teams "
-         "interests you more?", "Dana Whitfield <dana.whitfield@aurora-climate.example>", action_required=True)
+         "interests you more?", d.zh("The recruiter asks which of their two science teams interests you more before "
+                                     "passing your resume on; reply.", "招聘方想知道你对两个科学团队中的哪个更感兴趣，"
+                                                                      "再把简历转给用人经理；回复一下。"),
+         "reply", action_required=True)
+    # Cobalt Systems: an assessment with a deadline; Pinecrest Insurance: a rejection
+    mail(8, "Cobalt Systems", "oa_invite", 1, 10, "Cobalt Systems Recruiting <no-reply@cobalt-careers.example>",
+         "Next step: online assessment", "Please complete the 90-minute coding assessment within 4 days.",
+         d.zh("A 90-minute coding assessment, due in four days; take it on your own.",
+              "90 分钟的编程测评，四天内完成；请独立完成。"), "do_oa",
+         deadline=(d.now + timedelta(days=3)).date().isoformat(), action_required=True)
+    mail(9, "Pinecrest Insurance", "rejection", 11, 14, "Pinecrest Talent <no-reply@pinecrest-jobs.example>",
+         "Your application to Pinecrest Insurance", "Unfortunately, we have decided to move forward with other "
+         "candidates.", d.zh("They decided not to move forward; nothing to do.", "对方决定不推进；不用做什么。"), "none")
     for ago in sorted(batches, reverse=True):
         msgs = sorted(batches[ago], key=lambda m: m["received_at"])
         at = util.parse_time(msgs[-1]["received_at"]) + timedelta(minutes=25)

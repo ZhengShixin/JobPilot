@@ -96,7 +96,9 @@
 
 ## `[inbox]`, `[followup]`, `[dashboard]`, `[notify]`
 
-`inbox.lookback_days` (14) · `followup.after_days` (10: an application without an answer after this many days is
+`inbox.lookback_days` (14) · `inbox.my_addresses` ([]: your own email addresses; mail from them counts as yours
+whatever the reader thinks, otherwise the Sent label decides) · `followup.after_days` (10: an application without an
+answer after this many days is
 suggested for a follow-up) · `dashboard.port` (8765) · `notify.command` (a shell command run after each daily run;
 `{title}` and `{text}` are replaced, shell-quoted), e.g.
 `command = "osascript -e 'display notification {text} with title {title}'"` or
