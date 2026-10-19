@@ -539,7 +539,8 @@ en: {
   empty_matches_t:'No matches waiting', empty_matches:'New postings arrive with the next daily search.',
   up_next:'Up next', due_oa:'Assessment due', due_iv:'Interview', due_fu:'Follow up', fu_days:'Applied {n} days ago, no reply yet',
   overdue:'overdue', nothing_due_t:'Nothing due this week', nothing_due:'Recruiter mail, deadlines, interviews and follow-ups show up here.',
-  mail_wait:'Recruiter mail waiting for your reply', due_sched:'Deadlines and interviews',
+  mail_wait:'Recruiter mail waiting for your reply', due_sched:'Deadlines and interviews', ics:'Add to calendar (.ics)',
+  ics_tip:'Upcoming interviews and assessment deadlines; importing a newer file updates the same entries.',
   mail_got:'received {when}', mail_n:'{n} emails', open_mail:'Open email',
   mail_invite:'Record as interview invite', mail_done:'Replied — stop reminding', mail_hidden:'Email links are hidden in the demo.',
   mail_invited:'Recorded as an interview invitation', mail_answered:'Marked as answered', next_mail:'Reply to recruiter',
@@ -638,7 +639,8 @@ zh: {
   empty_matches_t:'暂时没有待投岗位', empty_matches:'下一次每日搜索会带来新岗位。',
   up_next:'接下来', due_oa:'测评截止', due_iv:'面试', due_fu:'跟进', fu_days:'投递 {n} 天，还没有回复',
   overdue:'已逾期', nothing_due_t:'本周没有待办', nothing_due:'招聘方来信、截止日期、面试和跟进提醒会出现在这里。',
-  mail_wait:'招聘方来信：等你回复', due_sched:'截止与面试',
+  mail_wait:'招聘方来信：等你回复', due_sched:'截止与面试', ics:'加到日历（.ics）',
+  ics_tip:'即将到来的面试和测评截止；再次导入新文件会更新同一批日程。',
   mail_got:'{when} 收到', mail_n:'共 {n} 封', open_mail:'打开邮件',
   mail_invite:'记为面试邀请', mail_done:'已回复，不用再提醒', mail_hidden:'演示中隐藏了邮件链接。',
   mail_invited:'已记为面试邀请', mail_answered:'已标记为回复过', next_mail:'回复招聘方',
@@ -1034,6 +1036,7 @@ function mailItem(m) {
       ${m.subject ? h`<span class="due-q">${m.subject}</span>` : ''}${gistLine(m.gist)}</span></button>
     <div class="mail-acts">${mailActs(m)}</div></div>`;
 }
+const icsLink = () => h`<a class="btn btn-sm btn-ghost" href="${STATIC ? '#' : '/calendar.ics'}" ${STATIC ? raw('data-act="static-file"') : raw('download="jobpilot.ics"')} title="${t('ics_tip')}">${icon('calendar', 'icon-sm')}${t('ics')}</a>`;
 function dueItem(kind, at, title, sub, appId, cls, ic, extra) {
   const d = parseT(at);
   const mo = d ? d.toLocaleDateString(locale(), {month: 'short'}) : '', dy = d ? d.getDate() : '';
@@ -1083,7 +1086,8 @@ async function renderToday() {
         <div class="matches">${(tr.top || []).slice(0, 3).map(matchRow)}</div>`) : emptyState('spark', t('empty_matches_t'), t('empty_matches'))}
     </div>
     <div class="stack">
-      <div class="card"><div class="card-h"><h2>${t('up_next')}</h2>${mails.length + dueRows.length ? h`<span class="badge">${mails.length + dueRows.length}</span>` : ''}</div>
+      <div class="card"><div class="card-h"><h2>${t('up_next')}</h2>${mails.length + dueRows.length ? h`<span class="badge">${mails.length + dueRows.length}</span>` : ''}
+        <div class="right">${icsLink()}</div></div>
         ${mails.length ? h`<div class="due-group"><div class="due-h">${t('mail_wait')}</div>${mails.map(mailItem)}</div>` : ''}
         ${dueRows.length ? h`<div class="due-group">${mails.length ? h`<div class="due-h">${t('due_sched')}</div>` : ''}<div class="due">${dueRows}</div></div>`
           : mails.length ? '' : emptyState('calendar', t('nothing_due_t'), t('nothing_due'))}</div>
@@ -1165,7 +1169,7 @@ async function renderApps() {
   html(el, h`
   <div class="card"><div class="card-h"><h2>${t('pipeline')}</h2>
     <span class="sub">${ist && ist.last_scan ? t('inbox_last', {when: ago(ist.last_scan)}) : t('inbox_never')}${(inbox.unmatched || []).length ? ' · ' + t('inbox_unmatched', {n: inbox.unmatched.length}) : ''}</span>
-    <div class="right"><button class="btn btn-sm" data-act="add-app">+ ${t('add_app')}</button></div></div>
+    <div class="right">${icsLink()}<button class="btn btn-sm" data-act="add-app">+ ${t('add_app')}</button></div></div>
     <div class="funnel-chips">${chips.map(([k, n], i) => h`${i ? h`<span class="arrow">→</span>` : ''}<div class="fchip"><b>${fmtNum(n || 0)}</b><span>${t(k)}</span></div>`)}</div>
     <div id="add-app-form" hidden></div></div>
   <div class="board">${COLS.map(([c, label]) => h`<div class="col"><div class="col-h">${t(label)}<span class="badge">${by[c].length}</span></div>

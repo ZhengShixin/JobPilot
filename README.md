@@ -36,7 +36,9 @@ JobPilot does the tedious parts and leaves the decisions — and the submit butt
 - **Your pipeline, tracked.** Applications, assessments with deadlines, interviews, offers and rejections live in an
   append-only ledger. `/jobpilot:inbox` reads (only reads) your Gmail like a secretary: whole threads, your own
   replies included, a one-line summary and the next step for every email, an interview time both sides agreed
-  written straight onto the interview, and a recruiter's question kept on Today until you answer it.
+  written straight onto the interview, and a recruiter's question kept on Today until you answer it. Interviews and
+  assessment deadlines also land in an `.ics` file for your calendar app (`jobpilot app ics`, or "Add to calendar"
+  on the dashboard).
 - **Referrals.** `/jobpilot:referrals <company>` finds alumni of your schools at a company, ranks who is most likely
   to help, and drafts short personal notes and a cold email (with a one-click Gmail draft) — which you send
   yourself.

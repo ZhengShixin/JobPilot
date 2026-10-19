@@ -7,7 +7,13 @@ An application's state is derived from its events, never stored: the stage is th
     create(ws, company=, role=, posting_id=, url=, track=)        -> app id "A001"
     record(ws, app_id, event, date=, deadline=, time=, note=, by=)
     state(ws, app_id) / states(ws)                                 -> derived dicts
+
+A time written without a UTC offset (the dashboard's date-time field, `--time 2026-11-03T14:00`) is your local time:
+it is stored with the workspace time zone's offset.
 """
+import re
+from datetime import datetime
+
 from . import util
 
 EVENTS = {
@@ -103,9 +109,20 @@ def record(ws, app_id, event, **fields):
         raise util.JobPilotError("%s is not closed" % app_id)
     fields.setdefault("date", ws.today())
     fields.setdefault("by", "user")
+    for key in ("time", "deadline"):
+        if fields.get(key):
+            fields[key] = _localize(ws, fields[key])
     with ws.lock("ledger"):
         rec = _append(ws, app_id, event, **fields)
     return rec
+
+
+def _localize(ws, value):
+    """'2026-11-03T14:00' -> '2026-11-03T14:00-05:00' (the workspace's zone); dates and times with an offset stay."""
+    text = str(value).strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?", text):
+        return datetime.fromisoformat(text).replace(tzinfo=ws.tz).isoformat(timespec="minutes")
+    return text
 
 
 def _derive(evs, today=None):

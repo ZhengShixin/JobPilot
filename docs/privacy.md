@@ -13,6 +13,7 @@ JobPilot runs on your machine, in a folder you choose (the *workspace*). This pa
 | Applications, budget, activity | `data/apps.jsonl`, `data/budget.jsonl`, `data/events.jsonl` | append-only, hash-chained |
 | Referral search results (people) | `data/network/` | whitelisted public profile fields only |
 | Email updates | `data/inbox/` | message ids, dates, a short verbatim snippet and a one- or two-sentence summary; never full bodies |
+| Upcoming interviews and assessment deadlines | `data/calendar.ics` | rewritten after every update, for you to import into a calendar app |
 | Tailored resumes | `tailored/<date>_<company>_<role>/` | |
 | Apify token | `~/.config/jobpilot/apify-token` (mode 600), `$APIFY_TOKEN` or the workspace `.env` | never printed or logged |
 | Dashboard login key | `data/dashboard.token` (mode 600) | the dashboard binds to 127.0.0.1 only |

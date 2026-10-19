@@ -272,6 +272,38 @@ class CoreTest(support.EnvCase):
             ledger.record(self.ws, a, "void")
         self.assertEqual(util.jsonl_verify(self.ws.apps_path), [])
 
+    def test_calendar_file(self):
+        from jobpilot import ics
+        a = ledger.create(self.ws, "Acme Robotics", "ML Engineer, Search", track="mle")
+        ledger.record(self.ws, a, "applied", date="2026-10-10")
+        ledger.record(self.ws, a, "interview_invited")
+        ledger.record(self.ws, a, "interview_scheduled", time="2026-10-24T15:00", minutes=45)   # local time
+        self.assertEqual(ledger.state(self.ws, a)["interviews"][0]["time"], "2026-10-24T15:00-04:00")
+        b = ledger.create(self.ws, "Northwind Retail", "Data Scientist", track="ds")
+        ledger.record(self.ws, b, "oa_invited", deadline="2026-10-22")
+        text, n = ics.build(self.ws)
+        self.assertEqual(n, 2)
+        self.assertTrue(text.startswith("BEGIN:VCALENDAR\r\n") and text.endswith("END:VCALENDAR\r\n"))
+        self.assertIn("DTSTART:20261024T190000Z\r\nDTEND:20261024T194500Z", text)
+        self.assertIn("DTSTART;VALUE=DATE:20261022\r\nDTEND;VALUE=DATE:20261023", text)
+        self.assertIn("SUMMARY:Interview: Acme Robotics — ML Engineer\\, Search", text)
+        self.assertTrue(all(len(line.encode()) <= 75 for line in text.split("\r\n")))
+        uid = [x for x in text.split("\r\n") if x.startswith("UID:") and "-interview-" in x]
+        ledger.record(self.ws, a, "interview_scheduled", time="2026-10-26T10:00-04:00", rescheduled=True)
+        moved, _ = ics.build(self.ws)
+        self.assertIn(uid[0], moved)                                    # the same entry, moved
+        self.assertIn("DTSTART:20261026T140000Z", moved)
+        self.assertNotIn("20261024T190000Z", moved)
+        ledger.record(self.ws, b, "oa_done")
+        ledger.record(self.ws, a, "withdrawn")
+        self.assertEqual(ics.build(self.ws)[1], 0)
+        out = self.ws.root / "mine.ics"
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(cli.main(["--workspace", str(self.ws.root), "app", "ics", "--out", str(out)]), 0)
+        self.assertIn("0 upcoming", buf.getvalue())
+        self.assertTrue(out.read_text().startswith("BEGIN:VCALENDAR"))
+
     def test_brief(self):
         self._collect_and_review()
         text, data = brief.build(self.ws)

@@ -1224,6 +1224,8 @@ def create(target, lang="en", force=False):
     _referrals(d)
     _tailored(d)
     _reports(d)
+    from . import ics
+    ics.refresh(ws)
     with _at(d.now - timedelta(minutes=2)):
         ws.event("system", d.zh("demo workspace ready: every company, person and posting is fictional",
                                  "演示工作区已生成：所有公司、人物和岗位都是虚构的"))

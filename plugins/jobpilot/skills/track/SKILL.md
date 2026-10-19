@@ -19,7 +19,10 @@ Reply in the user's language. The ledger is append-only; never edit data files d
    could match, ask which one.
 3. Record the event with `jobpilot app event <A###> <event> [--date] [--deadline] [--time] [--note] [--referrer]`:
    applied, receipt, referral (--referrer initials), followup_sent, recruiter_reply, oa_invited (--deadline),
-   oa_done, interview_invited, interview_scheduled (--time ISO, e.g. 2026-11-03T14:00), interview_done, offer,
-   rejected, withdrawn, closed (no response), reopened, note, void (recorded by mistake; only before any progress).
+   oa_done, interview_invited, interview_scheduled (--time ISO, e.g. 2026-11-03T14:00 in the user's local time,
+   --minutes the length, --rescheduled when it moves the open interview's time), interview_done, offer, rejected,
+   withdrawn, closed (no response), reopened, note, void (recorded by mistake; only before any progress).
 4. Confirm in one line (application id, new stage). If asked what is due: `jobpilot app due --json` and list
-   deadlines, interviews and follow-ups (applied N days ago, no answer) in date order.
+   deadlines, interviews, interviews still waiting for a time, and follow-ups (applied N days ago, no answer) in date
+   order. Interviews and assessment deadlines are also in `data/calendar.ics` (rewritten after every update;
+   `jobpilot app ics --out <file>` writes a copy) for the user to import into their calendar app.

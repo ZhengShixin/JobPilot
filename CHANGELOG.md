@@ -24,6 +24,12 @@
   whose advertised annual maximum lies under the target is admitted as a practice role: tagged "Low pay · practice"
   / 「低薪·练手」 (the pool search finds it by those words), queued after the regular roles of its track and marked in
   the daily report. A role without an advertised salary stays a regular role.
+- Calendar file: `jobpilot app ics [--out FILE]` writes upcoming interviews (with their time and length) and
+  assessment deadlines as iCalendar (standard library only); `data/calendar.ics` is rewritten after every
+  `jobpilot app event`, dashboard update and inbox sync, entries keep their UID so importing a newer file updates
+  them (a rescheduled interview moves), and the dashboard has an "Add to calendar (.ics)" download. A time recorded
+  without an offset (the dashboard's date-time field, `--time 2026-11-03T14:00`) is now stored as the workspace
+  time zone's local time instead of being read as UTC.
 
 ### Fixed
 

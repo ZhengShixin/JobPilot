@@ -32,7 +32,7 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from . import claude, config, ledger, schema as S, util
+from . import claude, config, ics, ledger, schema as S, util
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 CATEGORIES = {
@@ -515,6 +515,8 @@ def apply(ws, results):
             summary["agreed"].append(dict(row, time=m["interview"]["time"]))
         elif m["category"] == "owner_reply":
             summary["your_replies"].append(row)
+    if summary["recorded"]:
+        ics.refresh(ws)
     if summary["recorded"] or summary["unmatched"]:
         ws.event("inbox", "inbox: %d update%s recorded, %d email%s unmatched" % (
             summary["recorded"], "" if summary["recorded"] == 1 else "s", summary["unmatched"],
@@ -678,6 +680,7 @@ def link(ws, message_id, app_id):
                                 interview=rec.get("interview"))
         util.atomic_write_json(_dir(ws) / "seen.json", seen, mode=0o600)
     ws.event("inbox", "linked an email to %s (%s)" % (st["id"], rec.get("category")), app_id=st["id"])
+    ics.refresh(ws)
     return {"app_id": st["id"], "events": [e for e, _ in events], "attention": attention}
 
 

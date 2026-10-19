@@ -265,6 +265,17 @@ class DashboardTest(unittest.TestCase):
         self.assertIn("attachment", headers["content-disposition"])
         self.assertEqual(self.req("GET", "/files?path=" + self.ws.rel(rep))[0], 401)
 
+    def test_calendar_download(self):
+        self.assertEqual(self.req("GET", "/calendar.ics")[0], 401)
+        status, headers, body = self.req("GET", "/calendar.ics", headers={"Cookie": self.cookie()})
+        self.assertEqual(status, 200)
+        self.assertTrue(headers["content-type"].startswith("text/calendar"))
+        self.assertIn("attachment", headers["content-disposition"])
+        text = body.decode()
+        self.assertIn("SUMMARY:Interview: Lumen Health AI", text)
+        self.assertIn("SUMMARY:Assessment due: Cobalt Systems", text)
+        self.assertTrue((self.ws.data / "calendar.ics").exists())
+
     def test_static_export(self):
         out = self.tmp / "export.html"
         server.export_static(self.ws, out)

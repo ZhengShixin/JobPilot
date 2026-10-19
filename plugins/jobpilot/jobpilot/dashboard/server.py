@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from .. import __version__, brief, budget, config, ledger, pool, search, util
+from .. import __version__, brief, budget, config, ics, ledger, pool, search, util
 from . import tasks
 
 HERE = Path(__file__).resolve().parent
@@ -687,6 +687,7 @@ class Writes:
             except util.JobPilotError:
                 pass
         ws.event("app", "%s %s: %s — %s" % (app_id, event, st["company"], st["role"]), app_id=app_id)
+        ics.refresh(ws)
         after = int((ws.cfg.get("followup") or {}).get("after_days") or 10)
         return {"ok": True, "app": _app_lite(ws, st, after)}
 
@@ -917,6 +918,13 @@ def make_handler(app):
                 if not self._authed():
                     return self._error(401, "sign in first")
                 return self._file(q.get("path") or "")
+            if path == "/calendar.ics":
+                if not self._authed():
+                    return self._error(401, "sign in first")
+                text, _ = ics.build(app.ws)
+                return self._send(200, text, "text/calendar; charset=utf-8",
+                                  headers={"Content-Disposition": 'attachment; filename="jobpilot.ics"',
+                                           "Cache-Control": "no-store"})
             return self._send(404, "not found", "text/plain; charset=utf-8")
 
         def _file(self, rel):

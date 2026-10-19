@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import sys
 
-from . import __version__, budget, config, ledger, pool, util, workspace
+from . import __version__, budget, config, ics, ledger, pool, util, workspace
 from .db import STATUSES
 
 FEATURE_MODULES = ("tailor", "network", "inbox")
@@ -298,6 +298,7 @@ def cmd_app(ws, args):
             except util.JobPilotError:
                 pass
         ws.event("app", "%s %s: %s — %s" % (args.app_id, args.event, st["company"], st["role"]), app_id=args.app_id)
+        ics.refresh(ws)
         return out(args, st, "%s is now %s" % (args.app_id, st["stage"]))
     if args.action == "list":
         sts = [s for s in ledger.states(ws).values() if not s["voided"] and (args.all or not s["closed"])]
@@ -314,6 +315,11 @@ def cmd_app(ws, args):
         return out(args, st)
     if args.action == "due":
         return out(args, ledger.due(ws))
+    if args.action == "ics":
+        path, n = ics.write(ws, out=args.out)
+        return out(args, {"path": str(path), "entries": n},
+                   "%s: %d upcoming interview(s) and assessment deadline(s); import it into your calendar (importing a "
+                   "newer file updates the same entries)" % (path, n))
     raise AssertionError(args.action)
 
 
@@ -438,7 +444,7 @@ def parser():
             q.add_argument("--review", action="store_true", help="review it right away")
     add("stats", cmd_stats, help="pool, funnel, budget and due items")
 
-    sp = add("app", cmd_app, help="applications: add, event, list, show, due")
+    sp = add("app", cmd_app, help="applications: add, event, list, show, due, ics")
     asub = sp.add_subparsers(dest="action", required=True)
     q = asub.add_parser("add")
     q.add_argument("--posting", help="posting id from the pool")
@@ -464,6 +470,8 @@ def parser():
     q = asub.add_parser("show")
     q.add_argument("app_id")
     asub.add_parser("due")
+    q = asub.add_parser("ics", help="write upcoming interviews and assessment deadlines as an .ics calendar file")
+    q.add_argument("--out", help="where to write it (default data/calendar.ics)")
     for q in asub.choices.values():
         q.add_argument("--json", action="store_true")
 

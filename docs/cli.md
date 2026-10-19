@@ -151,7 +151,7 @@ jobpilot pool add [-h] [--json] --title TITLE --company COMPANY [--url URL] [--l
 
 ### `jobpilot app`
 
-Applications: add, event, list, show, due.
+Applications: add, event, list, show, due, ics.
 
 ```text
 jobpilot app add [-h] [--posting POSTING] [--company COMPANY] [--role ROLE] [--url URL] [--track TRACK] [--note NOTE] [--applied] [--date DATE] [--json]
@@ -159,6 +159,7 @@ jobpilot app event [-h] [--date DATE] [--deadline DEADLINE] [--time TIME] [--min
 jobpilot app list [-h] [--all] [--json]
 jobpilot app show [-h] [--json] app_id
 jobpilot app due [-h] [--json]
+jobpilot app ics [-h] [--out OUT] [--json]
 ```
 
 ## Resumes
