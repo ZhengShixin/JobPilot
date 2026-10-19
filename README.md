@@ -42,8 +42,9 @@ JobPilot does the tedious parts and leaves the decisions — and the submit butt
 - **Referrals.** `/jobpilot:referrals <company>` finds alumni of your schools at a company, ranks who is most likely
   to help, and drafts short personal notes and a cold email (with a one-click Gmail draft) — which you send
   yourself.
-- **A calm local dashboard.** Today's matches, the pool with score breakdowns, a kanban of your applications,
-  referrals, spend and activity — in English or 中文, light or dark, on your laptop or phone.
+- **A calm local dashboard.** Today's matches, the pool with score breakdowns, a kanban of your applications and a
+  flow chart of where every application went (applied → assessments → interviews → offer, rejected, closed or still
+  waiting), referrals, spend and activity — in English or 中文, light or dark, on your laptop or phone.
 
 ## How it works
 

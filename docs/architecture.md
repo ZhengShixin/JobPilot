@@ -14,9 +14,9 @@ plugins/jobpilot/
 │   ├── triage.py review.py scoring.py pool.py                      # filtering, review, the pool
 │   ├── ledger.py brief.py daily.py schedule.py                     # applications, reports, automation
 │   ├── docx.py tailor.py                                           # resume tailoring
-│   ├── network.py inbox.py                                         # referrals, Gmail tracking
+│   ├── network.py inbox.py ics.py                                  # referrals, Gmail tracking, calendar file
 │   ├── claude.py                                                   # one-shot `claude -p` runs
-│   ├── dashboard/  prompts/  data/
+│   ├── dashboard/  prompts/  data/                                 # dashboard: server.py, app.html, flow.py
 │   └── cli.py
 ├── skills/<name>/SKILL.md  # /jobpilot:<name>
 ├── agents/*.md             # claims-auditor, fit-analyst

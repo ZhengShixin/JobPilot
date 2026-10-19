@@ -17,7 +17,7 @@
   --warning:#fab219;--warning-text:#8a5400;--warning-soft:rgba(250,178,25,.18);
   --critical:#d03b3b;--critical-text:#b42d2d;--critical-soft:rgba(208,59,59,.10);
   --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#e34948;--s0:#898781;
-  --f1:#104281;--f2:#1c5cab;--f3:#2a78d6;--f4:#5598e7;--f5:#86b6ef;
+  --f1:#104281;--f2:#1c5cab;--f3:#2a78d6;--f4:#5598e7;--f5:#86b6ef;--fl-none:#898781;--fl-closed:#c3c2b7;
   --track-soft:.16;
   --shadow:0 1px 2px rgba(11,11,11,.04),0 6px 20px rgba(11,11,11,.045);
   --shadow-lg:0 28px 70px rgba(11,11,11,.22);
@@ -35,7 +35,7 @@
   --good-text:#3fbf3f;--good-soft:rgba(12,163,12,.16);--warning-text:#e5b54a;--warning-soft:rgba(250,178,25,.14);
   --critical-text:#f08585;--critical-soft:rgba(208,59,59,.18);
   --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;
-  --f1:#9ec5f4;--f2:#6da7ec;--f3:#3987e5;--f4:#256abf;--f5:#184f95;
+  --f1:#9ec5f4;--f2:#6da7ec;--f3:#3987e5;--f4:#256abf;--f5:#184f95;--fl-none:#a8a69e;--fl-closed:#6e6d68;
   --track-soft:.24;--shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.35);--shadow-lg:0 28px 70px rgba(0,0,0,.6);
   --scrim:rgba(0,0,0,.55)}}
 :root[data-theme="dark"]{color-scheme:dark;
@@ -47,7 +47,7 @@
   --good-text:#3fbf3f;--good-soft:rgba(12,163,12,.16);--warning-text:#e5b54a;--warning-soft:rgba(250,178,25,.14);
   --critical-text:#f08585;--critical-soft:rgba(208,59,59,.18);
   --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;
-  --f1:#9ec5f4;--f2:#6da7ec;--f3:#3987e5;--f4:#256abf;--f5:#184f95;
+  --f1:#9ec5f4;--f2:#6da7ec;--f3:#3987e5;--f4:#256abf;--f5:#184f95;--fl-none:#a8a69e;--fl-closed:#6e6d68;
   --track-soft:.24;--shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.35);--shadow-lg:0 28px 70px rgba(0,0,0,.6);
   --scrim:rgba(0,0,0,.55)}
 *{box-sizing:border-box}
@@ -229,6 +229,22 @@ main{max-width:1240px;margin:0 auto;padding:22px 24px 40px}
 .mini-table th,.mini-table td{text-align:right;padding:5px 6px;border-bottom:1px solid var(--grid)}
 .mini-table th:first-child,.mini-table td:first-child{text-align:left}
 .mini-table th{color:var(--muted);font-weight:600}
+.mini-table .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:-1px}
+.sw[data-flow="applied"]{background:var(--f5)}.sw[data-flow="replied"]{background:var(--f4)}.sw[data-flow="oa"]{background:var(--f3)}.sw[data-flow="iv"]{background:var(--f1)}
+.sw[data-flow="offer"]{background:var(--good)}.sw[data-flow="reject"]{background:var(--critical)}
+.sw[data-flow="none"]{background:var(--fl-none)}.sw[data-flow="withdrawn"]{background:var(--fl-closed)}
+/* ---------- flow */
+.flow-scroll{overflow-x:auto;margin:0 -6px;padding:2px 6px 6px}
+.flow-box{min-height:120px}
+.flow-box svg{display:block;max-width:none;overflow:visible}
+.flow-box .node{cursor:pointer;outline:none}
+.flow-box .node:hover rect:first-of-type,.flow-box .band:hover{filter:brightness(1.12)}
+.flow-box .node:focus rect:first-of-type,.flow-box .node.sel rect:first-of-type{stroke:var(--ink);stroke-width:2}
+.flow-hint{font-size:12px;color:var(--muted);margin-top:6px}
+.flow-swipe{display:block;color:var(--accent);font-weight:600;margin-bottom:2px}
+.flow-sel{margin-top:12px;border-top:1px solid var(--grid);padding-top:10px}
+.flow-sel .row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.flow-apps{display:flex;flex-wrap:wrap;gap:6px}
 /* ---------- report */
 .rep-lines{display:grid;gap:8px;font-size:13px}
 .rep-line{display:flex;gap:8px;align-items:center}.rep-line.top{align-items:flex-start}
@@ -549,6 +565,13 @@ en: {
   f_resched:'This moves the earlier time',
   pipeline:'Pipeline', pipeline_sub:'Every application you have sent',
   f_applied:'Applied', f_responded:'Heard back', f_oa:'Assessment', f_interview:'Interview', f_offer:'Offer',
+  flow_t:'Application flow', flow_sub:'Where every application you sent went', see_flow:'See the flow',
+  flow_applied:'Applied', flow_oa:'Assessment', flow_iv:'Interview', flow_offer:'Offer', flow_replied:'Recruiter replied', flow_none:'No answer yet',
+  flow_withdrawn:'Closed · withdrawn', flow_reject:'Rejected', flow_stage:'Stage', flow_count:'Applications',
+  flow_share:'Share of applied', flow_open:'Still in progress', flow_total_open:'In progress (assessments and interviews)',
+  flow_hint:'Hover a stage for its numbers; click it (or press Enter) to list its applications.',
+  flow_swipe:'Scroll sideways for the later stages →', flow_empty_t:'No applications sent yet', flow_empty:'The flow appears once you mark applications as applied.',
+  flow_sum:'Where your {n} applications went', flow_sum1:'Where your application went',
   per_day:'Matches per day', per_day_sub:'Postings admitted to the pool, last 7 days', chart:'Chart', table:'Table', total:'Total', day:'Day',
   of_prev:'{p}% of the previous stage',
   report:"Today's report", report_none_t:'No report yet', report_none:'`jobpilot daily` writes one after each run.',
@@ -649,6 +672,13 @@ zh: {
   f_resched:'这是改期（替换之前的时间）',
   pipeline:'投递漏斗', pipeline_sub:'你投出的每一份申请',
   f_applied:'已投递', f_responded:'有回音', f_oa:'测评', f_interview:'面试', f_offer:'Offer',
+  flow_t:'投递流向', flow_sub:'你投出的每份申请去了哪里', see_flow:'查看流向',
+  flow_applied:'已投递', flow_oa:'测评', flow_iv:'面试', flow_offer:'Offer', flow_replied:'招聘方回复', flow_none:'暂无回复',
+  flow_withdrawn:'关闭·撤回', flow_reject:'被拒', flow_stage:'阶段', flow_count:'投递数',
+  flow_share:'占已投递', flow_open:'进行中', flow_total_open:'进行中合计（测评和面试）',
+  flow_hint:'鼠标移到阶段上看数字；点击（或按回车）列出对应的申请。',
+  flow_swipe:'左右滑动查看后面的阶段 →', flow_empty_t:'还没有投出的申请', flow_empty:'把申请标记为已投递后，这里会显示流向。',
+  flow_sum:'你投出的 {n} 份申请去了哪里', flow_sum1:'你投出的申请去了哪里',
   per_day:'每日新匹配', per_day_sub:'近 7 天进入岗位库的岗位', chart:'图表', table:'表格', total:'合计', day:'日期',
   of_prev:'上一阶段的 {p}%',
   report:'今日报告', report_none_t:'还没有报告', report_none:'每次运行 `jobpilot daily` 后都会生成一份。',
@@ -935,10 +965,10 @@ document.addEventListener('focusin', e => { const el = e.target.closest && e.tar
 document.addEventListener('focusout', () => { tip.hidden = true; });
 
 /* ------------------------------------------------------------------ charts */
-function chartCard(id, title, sub, chartFrag, tableFrag, legend) {
-  const mode = state.chartMode[id] || 'chart';
-  return h`<div class="card"><div class="card-h"><h2>${title}</h2><span class="sub">${sub}</span>
-    <div class="right"><span class="seg-toggle" role="group">
+function chartCard(id, title, sub, chartFrag, tableFrag, legend, opts) {
+  const mode = state.chartMode[id] || 'chart', o = opts || {};
+  return h`<div class="card" ${o.cardId ? raw('id="' + esc(o.cardId) + '"') : ''}><div class="card-h"><h2>${title}</h2><span class="sub">${sub}</span>
+    <div class="right">${o.extra || ''}<span class="seg-toggle" role="group">
       <button data-act="chart-mode" data-id="${id}" data-mode="chart" aria-pressed="${mode === 'chart'}">${t('chart')}</button>
       <button data-act="chart-mode" data-id="${id}" data-mode="table" aria-pressed="${mode === 'table'}">${t('table')}</button></span></div></div>
     ${mode === 'chart' ? h`${legend || ''}${chartFrag}` : tableFrag}</div>`;
@@ -956,7 +986,7 @@ function funnelChart(fun) {
     return h`<g class="bar" tabindex="0" data-tip="${tipData}" aria-label="${t(key)}: ${n}">
       <rect class="hit" x="0" y="${y - gap / 2}" width="${W}" height="${barH + gap}" rx="6"/>
       <text class="lbl" x="0" y="${y + barH / 2 + 4}">${t(key)}</text>
-      ${path ? h`<path class="fill f${i + 1}" d="${path}"/>` : ''}
+      ${path ? h`<path class="fill f${stages.length - i}" d="${path}"/>` : ''}
       <text class="val" x="${labelW + w + 8}" y="${y + barH / 2 + 4}">${fmtNum(n)}${rate !== null ? h`<tspan class="soft"> · ${rate}%</tspan>` : ''}</text></g>`;
   });
   return h`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('pipeline')}">
@@ -1091,7 +1121,8 @@ async function renderToday() {
         ${mails.length ? h`<div class="due-group"><div class="due-h">${t('mail_wait')}</div>${mails.map(mailItem)}</div>` : ''}
         ${dueRows.length ? h`<div class="due-group">${mails.length ? h`<div class="due-h">${t('due_sched')}</div>` : ''}<div class="due">${dueRows}</div></div>`
           : mails.length ? '' : emptyState('calendar', t('nothing_due_t'), t('nothing_due'))}</div>
-      ${chartCard('funnel', t('pipeline'), t('pipeline_sub'), funnelChart(fun), funnelTable(fun))}
+      ${chartCard('funnel', t('pipeline'), t('pipeline_sub'), funnelChart(fun), funnelTable(fun), '',
+        {extra: fun.applied ? h`<button class="btn btn-sm btn-ghost" data-act="goto-flow">${t('see_flow')} →</button>` : ''})}
       ${chartCard('daily', t('per_day'), t('per_day_sub'), dailyChart(sum), dailyTable(sum), legend())}
       <div class="card"><div class="card-h"><h2>${t('report')}</h2>${rep ? h`<span class="sub">${dateLong(rep.date)}</span>` : ''}</div>
         ${rep ? h`<div class="rep-lines">
@@ -1156,8 +1187,86 @@ function nextBadge(a) {
   if (n.kind === 'followup') return h`<span class="next warn">${icon('mail', 'icon-sm')}${t('next_fu', {n: n.days})}</span>`;
   return '';
 }
+function flowLabel(id, rounds) {
+  const m = /^(oa|iv)(\d+)$/.exec(id);
+  if (m) return t('flow_' + m[1]) + ((rounds || {})[m[1]] > 1 ? ' ' + m[2] : '');
+  return t('flow_' + id);
+}
+function flowShare(n, total) {
+  if (!total) return t('none');
+  const p = 100 * n / total;
+  return (p > 0 && p < 10 ? p.toFixed(1) : String(Math.round(p))) + '%';
+}
+function flowTable(f) {
+  const n = f.totals.applied;
+  return h`<table class="mini-table"><thead><tr><th>${t('flow_stage')}</th><th>${t('flow_count')}</th><th>${t('flow_share')}</th><th>${t('flow_open')}</th></tr></thead>
+    <tbody>${f.nodes.map(v => h`<tr><td><i class="sw" data-flow="${v.kind}"></i>${flowLabel(v.id, f.rounds)}</td><td>${v.count}</td>
+      <td>${v.id === 'applied' ? '' : flowShare(v.count, n)}</td><td>${v.open === null || v.open === undefined ? '' : v.open}</td></tr>`)}
+    ${f.totals.in_progress ? h`<tr><td>${t('flow_total_open')}</td><td></td><td></td><td>${f.totals.in_progress}</td></tr>` : ''}</tbody></table>`;
+}
+function flowCard(f) {
+  if (!f || !f.totals || !f.totals.applied) {
+    return h`<div class="card" id="flow-card"><div class="card-h"><h2>${t('flow_t')}</h2></div>${emptyState('funnel', t('flow_empty_t'), t('flow_empty'))}</div>`;
+  }
+  const sub = f.totals.applied === 1 ? t('flow_sum1') : t('flow_sum', {n: f.totals.applied});
+  return chartCard('flow', t('flow_t'), sub, h`<div class="flow-scroll" id="flow-scroll"><div class="flow-box" id="flow-box" data-sig="${f.sig}"></div></div>
+    <div class="flow-hint"><span class="flow-swipe" id="flow-swipe" hidden>${t('flow_swipe')}</span>${t('flow_hint')}</div><div id="flow-list" hidden></div>`,
+    flowTable(f), '', {cardId: 'flow-card'});
+}
+const flowCache = {key: null, svg: null};
+function themeNow() {
+  const th = document.documentElement.dataset.theme;
+  return th === 'dark' || (!th && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+async function loadFlow() {
+  const box = $('#flow-box');
+  if (!box) return;
+  const theme = themeNow(), width = Math.max(320, Math.round((box.clientWidth || 960) / 40) * 40);
+  const key = [theme, width, LANG, box.dataset.sig].join('|');
+  if (flowCache.key === key && flowCache.svg) { box.replaceChildren(flowCache.svg.cloneNode(true)); markFlow(); return; }
+  let text = '';
+  try {
+    if (STATIC) {
+      const set = ((STATIC.flow_svg || {})[LANG] || (STATIC.flow_svg || {}).en || {})[theme] || {};
+      text = set[width < 900 ? '600' : '1160'] || '';
+    } else {
+      const res = await fetch('/api/flow.svg?' + new URLSearchParams({theme, width, lang: LANG}).toString(), {credentials: 'same-origin'});
+      if (res.status === 401) { showLogin(); return; }
+      if (res.ok) text = await res.text();
+    }
+  } catch (e) { return; }
+  if (!text) return;
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+  const root = doc.documentElement;
+  if (!root || root.nodeName !== 'svg' || doc.getElementsByTagName('parsererror').length) return;
+  const svg = document.importNode(root, true);
+  flowCache.key = key; flowCache.svg = svg.cloneNode(true);
+  const now = $('#flow-box');
+  if (now) { now.replaceChildren(svg); markFlow(); }
+}
+function flowSwipe() {
+  const w = $('#flow-scroll'), hint = $('#flow-swipe');
+  if (!w || !hint) return;
+  hint.hidden = !(w.scrollWidth > w.clientWidth + 4) || w.scrollLeft + w.clientWidth >= w.scrollWidth - 4;
+}
+function markFlow() {
+  flowSwipe();
+  document.querySelectorAll('#flow-box [data-node]').forEach(g => g.classList.toggle('sel', g.getAttribute('data-node') === state.flowSel));
+}
+function flowSelect(id) {
+  state.flowSel = state.flowSel === id ? null : id;
+  markFlow();
+  const box = $('#flow-list'), f = state.cache.apps && state.cache.apps.flow;
+  const node = f && (f.nodes || []).find(v => v.id === state.flowSel);
+  if (!box) return;
+  box.hidden = !node;
+  if (!node) { box.replaceChildren(); return; }
+  html(box, h`<div class="flow-sel"><div class="row"><b>${flowLabel(node.id, f.rounds)} · ${node.count}</b>
+    <button class="btn btn-sm btn-ghost btn-icon" data-act="flow-close" aria-label="${t('cancel')}">${icon('close', 'icon-sm')}</button></div>
+    <div class="flow-apps">${node.apps.map(a => h`<button class="chipbtn" data-act="open-app" data-id="${a.id}">${a.company} — ${a.role}</button>`)}</div></div>`);
+}
 async function renderApps() {
-  const data = await api('apps');
+  const data = await api('apps', {lang: LANG});
   state.cache.apps = data;
   const el = $('#view-apps');
   const by = {}; COLS.forEach(([c]) => { by[c] = []; });
@@ -1172,6 +1281,7 @@ async function renderApps() {
     <div class="right">${icsLink()}<button class="btn btn-sm" data-act="add-app">+ ${t('add_app')}</button></div></div>
     <div class="funnel-chips">${chips.map(([k, n], i) => h`${i ? h`<span class="arrow">→</span>` : ''}<div class="fchip"><b>${fmtNum(n || 0)}</b><span>${t(k)}</span></div>`)}</div>
     <div id="add-app-form" hidden></div></div>
+  ${flowCard(data.flow)}
   <div class="board">${COLS.map(([c, label]) => h`<div class="col"><div class="col-h">${t(label)}<span class="badge">${by[c].length}</span></div>
     ${by[c].length ? by[c].map(a => h`<button class="kcard" data-act="open-app" data-id="${a.id}">
       <span class="co">${trackDot(a.track)}<span>${a.company}</span></span><span class="ro">${a.role}</span>
@@ -1179,6 +1289,8 @@ async function renderApps() {
         ${a.referrer ? h`<span class="next good">${icon('star', 'icon-sm')}${t('referred_by', {who: a.referrer})}</span>` : ''}${nextBadge(a)}</span></button>`)
       : h`<div class="empty">${t('empty_col')}</div>`}</div>`)}</div>`);
   paint(el);
+  if ((state.chartMode.flow || 'chart') === 'chart') loadFlow();
+  if (state.flowSel) { const keep = state.flowSel; state.flowSel = null; flowSelect(keep); }
 }
 function addAppForm() {
   const box = $('#add-app-form');
@@ -1517,7 +1629,7 @@ function setTab(tab, noHash) {
   document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== 'view-' + tab; });
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
   if (!noHash) setHash();
-  refresh(true);
+  return refresh(true);
 }
 function setHash() {
   const p = new URLSearchParams();
@@ -1543,7 +1655,9 @@ async function act(el, ev) {
     case 'close': return closeDrawer();
     case 'lang': LANG = LANG === 'en' ? 'zh' : 'en'; try { localStorage.setItem('jobpilot.lang', LANG); } catch (e) {} applyLang(); return refresh(true).then(() => reopen());
     case 'theme': return cycleTheme();
-    case 'chart-mode': state.chartMode[id] = el.dataset.mode; return renderToday();
+    case 'chart-mode': state.chartMode[id] = el.dataset.mode; return state.tab === 'apps' ? renderApps() : renderToday();
+    case 'goto-flow': { state.chartMode.flow = 'chart'; await setTab('apps'); const c = $('#flow-card'); if (c) c.scrollIntoView({block: 'start'}); return; }
+    case 'flow-close': return flowSelect(state.flowSel);
     case 'pool-track': state.poolq.track = el.dataset.track; state.poolq.limit = 50; return renderPool();
     case 'pool-more': state.poolq.limit += 50; return renderPool();
     case 'sort': { const k = el.dataset.key; if (state.poolq.sort === k) state.poolq.order = state.poolq.order === 'asc' ? 'desc' : 'asc'; else { state.poolq.sort = k; state.poolq.order = k === 'company' || k === 'title' ? 'asc' : 'desc'; } return renderPool(); }
@@ -1603,6 +1717,8 @@ async function copyText(text, btn) {
   const old = btn.innerHTML; btn.textContent = t('copied'); setTimeout(() => { btn.innerHTML = old; }, 1400);
 }
 document.addEventListener('click', e => {
+  const node = e.target.closest && e.target.closest('#flow-box [data-node]');
+  if (node) { flowSelect(node.getAttribute('data-node')); return; }
   const el = e.target.closest('[data-act]');
   if (!el) return;
   if (el.tagName === 'A' && !el.getAttribute('href').startsWith('#') && el.dataset.act !== 'static-file') return;
@@ -1612,6 +1728,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && state.drawer) { closeDrawer(); return; }
   if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); if (state.tab !== 'pool') setTab('pool'); setTimeout(() => { const i = $('#pool-q'); if (i) i.focus(); }, 60); return; }
   if (e.key === 'Enter' && document.activeElement && document.activeElement.matches('tr[data-act]')) { act(document.activeElement, e); }
+  const fn = document.activeElement && document.activeElement.closest && document.activeElement.closest('#flow-box [data-node]');
+  if (fn && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); flowSelect(fn.getAttribute('data-node')); }
 });
 let searchTimer;
 document.addEventListener('input', e => {
@@ -1621,6 +1739,10 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => { if (e.target.id === 'pool-status') { state.poolq.status = e.target.value; state.poolq.limit = 50; renderPool(); } });
 $('#scrim').addEventListener('click', closeDrawer);
+document.addEventListener('scroll', e => { if (e.target && e.target.id === 'flow-scroll') flowSwipe(); }, true);
+let flowTimer;
+window.addEventListener('resize', () => { clearTimeout(flowTimer); flowTimer = setTimeout(() => { if (state.tab === 'apps') loadFlow(); }, 250); });
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.tab === 'apps') loadFlow(); });
 
 /* ------------------------------------------------------------------ chrome, theme, language */
 function applyLang() {
@@ -1642,6 +1764,7 @@ function cycleTheme() {
   if (next) document.documentElement.dataset.theme = next; else delete document.documentElement.dataset.theme;
   try { if (next) localStorage.setItem('jobpilot.theme', next); else localStorage.removeItem('jobpilot.theme'); } catch (e) {}
   setThemeIcon();
+  if (state.tab === 'apps') loadFlow();
 }
 function updateChrome(sum) {
   const running = (state.tasks || []).filter(x => x.status === 'running');

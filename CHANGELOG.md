@@ -30,6 +30,12 @@
   them (a rescheduled interview moves), and the dashboard has an "Add to calendar (.ics)" download. A time recorded
   without an offset (the dashboard's date-time field, `--time 2026-11-03T14:00`) is now stored as the workspace
   time zone's local time instead of being read as UTC.
+- Application flow: a sankey of where every application went (Applied → Assessment rounds → Interview rounds →
+  Offer, Rejected, Closed · withdrawn, Recruiter replied or No answer yet), drawn server-side as SVG
+  (`dashboard/flow.py`, `/api/flow.svg?theme=&width=&lang=`) in the dashboard palette for light and dark, with
+  per-stage tooltips, keyboard focus, a click-through list of the applications at a stage and a table view; on the
+  Applications tab, linked from Today's pipeline card; the static export embeds it pre-rendered. Stages follow one
+  ordinal blue ramp (Today's pipeline bars now use the same direction).
 
 ### Fixed
 

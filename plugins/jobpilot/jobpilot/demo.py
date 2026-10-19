@@ -728,7 +728,8 @@ APPS = [
         (4, "interview_scheduled", {"time": (3, 11)}), (3, "interview_done", {})]),
     ("Cobalt Systems", "Applied Scientist", "as", [(9, "applied", {})]),
     ("Bluefin Capital", "Data Scientist", "ds", [
-        (12, "applied", {}), (9, "oa_invited", {"deadline": 6}), (7, "oa_done", {})]),
+        (12, "applied", {}), (9, "oa_invited", {"deadline": 6}), (7, "oa_done", {}),
+        (3, "oa_invited", {"deadline": -4})]),                       # a second-round case study
     ("Harborview Bank", "Machine Learning Engineer", "mle", [
         (21, "applied", {}), (17, "interview_invited", {}), (16, "interview_scheduled", {"time": (15, 13)}),
         (15, "interview_done", {}), (10, "rejected", {})]),

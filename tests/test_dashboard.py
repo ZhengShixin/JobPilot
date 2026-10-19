@@ -14,7 +14,7 @@ from pathlib import Path
 import support  # noqa: F401 - sets sys.path and JOBPILOT_OFFLINE
 
 from jobpilot import demo, ledger, util
-from jobpilot.dashboard import server, tasks
+from jobpilot.dashboard import flow, server, tasks
 
 
 class DashboardTest(unittest.TestCase):
@@ -276,6 +276,24 @@ class DashboardTest(unittest.TestCase):
         self.assertIn("SUMMARY:Assessment due: Cobalt Systems", text)
         self.assertTrue((self.ws.data / "calendar.ics").exists())
 
+    def test_application_flow(self):
+        f = self.get("/api/apps?lang=zh")["flow"]
+        self.assertEqual(flow.check(f), [])
+        ids = {v["id"] for v in f["nodes"]}
+        self.assertTrue({"applied", "oa1", "oa2", "iv1", "iv2", "offer", "reject", "none", "withdrawn"} <= ids, ids)
+        self.assertEqual(f["nodes"][0]["label"], "已投递")
+        self.assertEqual(self.req("GET", "/api/flow.svg")[0], 401)
+        cookie = {"Cookie": self.cookie()}
+        status, headers, body = self.req("GET", "/api/flow.svg?theme=dark&width=900&lang=en", headers=cookie)
+        self.assertEqual(status, 200)
+        self.assertTrue(headers["content-type"].startswith("image/svg+xml"))
+        svg = body.decode()
+        self.assertIn(flow.THEMES["dark"]["iv"], svg)
+        self.assertIn("Interview 2", svg)
+        status, _, body = self.req("GET", "/api/flow.svg?theme=nope&width=abc&lang=xx", headers=cookie)
+        self.assertEqual(status, 200)                                     # unknown values fall back
+        self.assertIn(flow.THEMES["light"]["oa"], body.decode())
+
     def test_static_export(self):
         out = self.tmp / "export.html"
         server.export_static(self.ws, out)
@@ -288,6 +306,11 @@ class DashboardTest(unittest.TestCase):
         self.assertTrue(data["pool_all"] and data["posting"] and data["app"] and data["person"])
         self.assertEqual(data["session"]["csrf"], "")
         self.assertNotIn(self.app.key, html)
+        svgs = data["flow_svg"]
+        self.assertEqual({(lang, theme, w) for lang in svgs for theme in svgs[lang] for w in svgs[lang][theme]},
+                         {(lang, theme, str(w)) for lang in ("en", "zh") for theme in ("light", "dark")
+                          for w in server.FLOW_WIDTHS})
+        self.assertIn("投递流向", svgs["zh"]["light"]["1160"])
 
 
 class TasksTest(unittest.TestCase):

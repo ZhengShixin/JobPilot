@@ -15,6 +15,7 @@ Security model:
 
     serve(ws, port=None, open_browser=True)    run until Ctrl-C
     export_static(ws, out_path)                one self-contained HTML file with every read view embedded (demos)
+    /api/flow.svg?theme=light|dark&width=N&lang=en|zh    the application flow (flow.py) as an SVG
     python3 -m jobpilot.dashboard.server --export FILE --workspace DIR
 """
 import hashlib
@@ -33,10 +34,11 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from .. import __version__, brief, budget, config, ics, ledger, pool, search, util
-from . import tasks
+from . import flow, tasks
 
 HERE = Path(__file__).resolve().parent
 MAX_BODY = 1 << 20
+FLOW_WIDTHS = (600, 1160)       # the static export's pre-rendered flow widths (narrow, wide)
 ADMITTED = ("ready", "hold", "applied", "skipped")
 STATUS_GROUPS = {
     "ready": ("ready",), "saved": ("hold",), "applied": ("applied",), "skipped": ("skipped",),
@@ -140,6 +142,10 @@ def _text(body, key, n=300, required=False):
     if not isinstance(value, (str, int, float)):
         raise ApiError(400, "%s must be text" % key)
     return str(value).strip()[:n]
+
+
+def _lang(q, cfg):
+    return q.get("lang") if q.get("lang") in flow.LABELS else config.language(cfg)
 
 
 def _url(value):
@@ -453,7 +459,14 @@ class Views:
         apps = [_app_lite(ws, s, after) for s in sts]
         for a in apps:
             a["mail_waiting"] = a["id"] in waiting
-        return {"apps": apps, "funnel": ledger.funnel(ws), "inbox": self.inbox(q)}
+        return {"apps": apps, "funnel": ledger.funnel(ws), "inbox": self.inbox(q),
+                "flow": flow.compute(ws, _lang(q, ws.cfg))}
+
+    def flow_svg(self, q):
+        theme = q.get("theme") if q.get("theme") in flow.THEMES else "light"
+        lang = _lang(q, self.ws.cfg)
+        return flow.render_svg(flow.compute(self.ws, lang), theme=theme, width=_int(q.get("width"), 960, 320, 2000),
+                               lang=lang)
 
     def app(self, q):
         ws = self.ws
@@ -902,6 +915,12 @@ def make_handler(app):
                 if not self._authed():
                     return self._error(401, "sign in: open the link `jobpilot dashboard` printed")
                 name = path[5:]
+                if name == "flow.svg":
+                    try:
+                        return self._send(200, app.views.flow_svg(q), "image/svg+xml; charset=utf-8",
+                                          headers={"Cache-Control": "no-store"})
+                    except Exception as exc:  # noqa: BLE001 - a view error must not kill the server
+                        return self._error(500, "%s: %s" % (type(exc).__name__, exc))
                 if name not in READS:
                     return self._error(404, "unknown view %s" % name)
                 try:
@@ -1062,6 +1081,9 @@ def export_static(ws, out_path):
             data["report"][d] = v.report({"date": d})
         except ApiError:
             continue
+    # the flow pre-rendered for each language, theme and width the page may need
+    data["flow_svg"] = {lang: {theme: {str(w): flow.render_svg(flow.compute(ws, lang), theme=theme, width=w, lang=lang)
+                                       for w in FLOW_WIDTHS} for theme in flow.THEMES} for lang in flow.LABELS}
     html = page("static", {"mode": "static"}, data)
     html = html.replace('<link rel="icon" href="/favicon.svg">',
                         '<link rel="icon" href="data:image/svg+xml,%s">' % FAVICON.replace("#", "%23")
