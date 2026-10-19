@@ -1,0 +1,78 @@
+# Example JobPilot configuration for a fictional candidate (examples/resume-example.md), as /jobpilot:setup
+# would write it. Copy the folder, replace the profile files with your own, or simply run /jobpilot:setup.
+
+[candidate]
+name = "Jordan Rivera"
+resume = "profile/resume.docx"
+work_authorization = "us_citizen"
+seniority = ["entry", "mid"]
+locations = ["United States"]
+work_arrangements = []
+min_salary_usd = 100000
+languages = ["English", "Spanish"]
+schools = ["Northfield Institute of Technology", "Lakeside State University"]
+
+[app]
+language = "en"
+timezone = "America/New_York"
+
+[[tracks]]
+id = "mle"
+name = "Machine Learning Engineer"
+priority = 1
+min_score = 5.0
+description = "Builds, trains, evaluates and ships machine-learning models (ranking, recommendation, forecasting, LLM-based systems) and the pipelines around them."
+categories = ["model_training", "ml_systems", "applied_ai", "other_mle"]
+
+[[tracks]]
+id = "ds"
+name = "Data Scientist"
+priority = 2
+min_score = 5.5
+description = "Predictive modeling, experimentation and causal analysis that drive product or business decisions, with hands-on modeling in Python and SQL."
+categories = ["predictive_modeling", "experimentation", "analytics", "other_ds"]
+
+[search]
+daily_budget_usd = 0.80
+monthly_budget_usd = 20.00
+run_time = "07:30"
+
+[search.common]
+aiEmploymentTypeFilter = ["FULL_TIME"]
+
+[search.groups.mle-core]
+track = "mle"
+budget_usd = 0.35
+titleSearch = ["Machine Learning Engineer", "Machine Learning Engineers", "ML Engineer", "ML Engineers",
+               "Engineer Machine Learning", "Engineer ML", "Applied Machine Learning", "Deep Learning Engineer",
+               "AI ML Engineer", "ML AI Engineer", "Machine Learning Platform", "MLOps Engineer",
+               "Recommendation Engineer", "Ranking Engineer", "AI:* Engineer"]
+titleExclusionSearch = ["Intern", "Internship", "Interns", "Summer", "Co-op", "Student", "Principal", "Distinguished",
+                        "Director", "Head", "VP", "Vice", "Chief", "Manager", "Lead", "Staff Engineer",
+                        "Staff Machine", "Staff ML", "Sales", "Solutions", "Support", "Recruiter", "Professor"]
+
+[search.groups.applied-scientist]
+track = "mle"
+budget_usd = 0.15
+titleSearch = ["Applied Scientist", "Applied Scientists", "Machine Learning Scientist", "ML Scientist"]
+titleExclusionSearch = ["Intern", "Internship", "Summer", "Principal", "Director", "Manager", "Lead", "Clinical",
+                        "Chemist", "Biology"]
+
+[search.groups.ds-core]
+track = "ds"
+budget_usd = 0.25
+titleSearch = ["Data Scientist", "Data Scientists", "Data Science", "Decision Scientist", "Product Scientist"]
+titleExclusionSearch = ["Intern", "Internship", "Interns", "Summer", "Principal", "Director", "Head", "VP", "Manager",
+                        "Lead", "Staff Data", "Instructor", "Teacher", "Clinical"]
+
+[filters]
+exclude_title_words = ["Sales", "Recruiter", "Recruiting", "Nurse", "Teacher", "Instructor"]
+protect_title_words = ["Machine Learning", "Data Scientist"]
+drop_experience_levels = ["5-10", "10+"]
+exclude_companies = []
+
+[claims]
+never_claim = ["Kubernetes", "Spark", "Scala", "CUDA", "people management"]
+
+[referrals]
+sign_name = "Jordan"

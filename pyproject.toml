@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jobpilot"
+version = "0.1.0"
+description = "AI job-search copilot for Claude Code: resume-driven daily job discovery, evidence-bound scoring, truthful resume tailoring and application tracking."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Shixin Zheng" }]
+keywords = ["job-search", "claude-code", "resume", "apify", "linkedin", "career"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/ZhengShixin/JobPilot"
+Issues = "https://github.com/ZhengShixin/JobPilot/issues"
+
+[project.scripts]
+jobpilot = "jobpilot.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "plugins/jobpilot" }
+
+[tool.setuptools.packages.find]
+where = ["plugins/jobpilot"]
+include = ["jobpilot*"]
+
+[tool.setuptools.package-data]
+jobpilot = ["prompts/*.md", "data/*.json", "dashboard/*.html"]
