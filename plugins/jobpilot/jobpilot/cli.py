@@ -329,6 +329,9 @@ def cmd_events(ws, args):
 
 def cmd_dashboard(ws, args):
     from .dashboard import server
+    if args.export:
+        print(server.export_static(ws, args.export))
+        return 0
     return server.serve(ws, port=args.port, open_browser=not args.no_open)
 
 
@@ -347,6 +350,9 @@ def cmd_demo(args):
     from . import demo
     ws = demo.create(args.dir, lang=args.lang or "en", force=args.force)
     print("demo workspace with fictional data: %s\nopen it: cd %s && ./jobpilot dashboard" % (ws.root, ws.root))
+    if args.export:
+        from .dashboard import server
+        print("static demo page: %s" % server.export_static(ws, args.export))
     return 0
 
 
@@ -464,6 +470,7 @@ def parser():
     sp = add("dashboard", cmd_dashboard, help="start the local dashboard")
     sp.add_argument("--port", type=int)
     sp.add_argument("--no-open", action="store_true")
+    sp.add_argument("--export", metavar="FILE", help="write a self-contained, read-only HTML snapshot and exit")
     sp = add("schedule", cmd_schedule, help="daily automation: install, remove, status")
     sp.add_argument("action", choices=["install", "remove", "status"])
     sp.add_argument("--time", help="HH:MM (default search.run_time)")
@@ -471,6 +478,7 @@ def parser():
     sp.add_argument("dir")
     sp.add_argument("--lang", choices=["en", "zh"])
     sp.add_argument("--force", action="store_true")
+    sp.add_argument("--export", metavar="FILE", help="also write a self-contained HTML page of the demo dashboard")
     add("version", cmd_version, needs_ws=False, help="print the version")
 
     for name in FEATURE_MODULES:

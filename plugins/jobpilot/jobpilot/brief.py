@@ -45,8 +45,8 @@ def build(ws, date=None, collect=None, review=None, problems=None):
     lang = config.language(cfg)
     t = T[lang]
     date = date or ws.today()
-    since = (util.parse_time(date + "T00:00:00") - timedelta(hours=24)).date().isoformat() if date else None
-    new_rows = ws.db.find("first_seen >= ?", (since,))
+    next_day = (util.parse_time(date + "T00:00:00") + timedelta(days=1)).date().isoformat()
+    new_rows = ws.db.find("first_seen >= ? AND first_seen < ?", (date, next_day))  # postings first seen that day
     tracks = []
     for tr in config.tracks(cfg):
         seen = [r for r in new_rows if tr["id"] in (r.get("hint_tracks") or []) or r.get("track") == tr["id"]]

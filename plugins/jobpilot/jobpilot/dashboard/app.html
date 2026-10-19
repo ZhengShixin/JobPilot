@@ -1,0 +1,1594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>JobPilot</title>
+<link rel="icon" href="/favicon.svg">
+<style nonce="{{NONCE}}">
+:root{color-scheme:light;
+  --page:#f4f4f1;--surface:#fcfcfb;--surface-2:#f2f1ed;--surface-3:#e8e7e1;
+  --ink:#0b0b0b;--ink-2:#52514e;--muted:#6e6d68;--faint:#898781;
+  --grid:#e1e0d9;--axis:#c3c2b7;--border:rgba(11,11,11,.10);--border-2:rgba(11,11,11,.17);
+  --accent:#256abf;--accent-soft:rgba(42,120,214,.10);--accent-ring:rgba(42,120,214,.40);
+  --btn:#256abf;--btn-hover:#1c5cab;--btn-ink:#ffffff;
+  --good:#0ca30c;--good-text:#006300;--good-soft:rgba(12,163,12,.10);
+  --warning:#fab219;--warning-text:#8a5400;--warning-soft:rgba(250,178,25,.18);
+  --critical:#d03b3b;--critical-text:#b42d2d;--critical-soft:rgba(208,59,59,.10);
+  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#e34948;--s0:#898781;
+  --f1:#104281;--f2:#1c5cab;--f3:#2a78d6;--f4:#5598e7;--f5:#86b6ef;
+  --track-soft:.16;
+  --shadow:0 1px 2px rgba(11,11,11,.04),0 6px 20px rgba(11,11,11,.045);
+  --shadow-lg:0 28px 70px rgba(11,11,11,.22);
+  --scrim:rgba(11,11,11,.30);
+  --r:14px;--r-sm:10px;--r-xs:7px;
+  --font:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){color-scheme:dark;
+  --page:#0d0d0d;--surface:#1a1a19;--surface-2:#222220;--surface-3:#2c2c2a;
+  --ink:#f0efec;--ink-2:#c3c2b7;--muted:#a8a69e;--faint:#898781;
+  --grid:#2c2c2a;--axis:#383835;--border:rgba(255,255,255,.10);--border-2:rgba(255,255,255,.17);
+  --accent:#6da7ec;--accent-soft:rgba(57,135,229,.16);--accent-ring:rgba(109,167,236,.5);
+  --btn:#3987e5;--btn-hover:#5598e7;--btn-ink:#0b0b0b;
+  --good-text:#3fbf3f;--good-soft:rgba(12,163,12,.16);--warning-text:#e5b54a;--warning-soft:rgba(250,178,25,.14);
+  --critical-text:#f08585;--critical-soft:rgba(208,59,59,.18);
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;
+  --f1:#9ec5f4;--f2:#6da7ec;--f3:#3987e5;--f4:#256abf;--f5:#184f95;
+  --track-soft:.24;--shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.35);--shadow-lg:0 28px 70px rgba(0,0,0,.6);
+  --scrim:rgba(0,0,0,.55)}}
+:root[data-theme="dark"]{color-scheme:dark;
+  --page:#0d0d0d;--surface:#1a1a19;--surface-2:#222220;--surface-3:#2c2c2a;
+  --ink:#f0efec;--ink-2:#c3c2b7;--muted:#a8a69e;--faint:#898781;
+  --grid:#2c2c2a;--axis:#383835;--border:rgba(255,255,255,.10);--border-2:rgba(255,255,255,.17);
+  --accent:#6da7ec;--accent-soft:rgba(57,135,229,.16);--accent-ring:rgba(109,167,236,.5);
+  --btn:#3987e5;--btn-hover:#5598e7;--btn-ink:#0b0b0b;
+  --good-text:#3fbf3f;--good-soft:rgba(12,163,12,.16);--warning-text:#e5b54a;--warning-soft:rgba(250,178,25,.14);
+  --critical-text:#f08585;--critical-soft:rgba(208,59,59,.18);
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;
+  --f1:#9ec5f4;--f2:#6da7ec;--f3:#3987e5;--f4:#256abf;--f5:#184f95;
+  --track-soft:.24;--shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.35);--shadow-lg:0 28px 70px rgba(0,0,0,.6);
+  --scrim:rgba(0,0,0,.55)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased;
+  padding:0 0 max(24px,env(safe-area-inset-bottom))}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent-ring);outline-offset:2px;border-radius:6px}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+h2{font-size:15px}h3{font-size:13px;color:var(--ink-2);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.icon{width:16px;height:16px;flex:none;vertical-align:-3px}
+.icon-sm{width:14px;height:14px;flex:none;vertical-align:-2px}
+/* ---------- header */
+.top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--page) 88%,transparent);
+  backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);
+  border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top)}
+.top-in{max-width:1240px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:9px;color:var(--ink);font-weight:700;font-size:16px;letter-spacing:-.02em}
+.brand:hover{text-decoration:none}
+.brand svg{width:28px;height:28px}
+.brand .b1{fill:var(--btn)}.brand .b2{fill:var(--btn-ink)}.brand .b3{opacity:.55}
+.ws{font-size:12px;color:var(--muted);padding:2px 8px;border:1px solid var(--border);border-radius:999px;
+  max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabs{display:flex;gap:2px;margin-left:8px}
+.tab{border:0;background:none;padding:7px 12px;border-radius:9px;color:var(--ink-2);cursor:pointer;font-weight:550;
+  white-space:nowrap;position:relative}
+.tab:hover{background:var(--surface-2);color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);background:var(--surface)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:-11px;height:2px;border-radius:2px;
+  background:var(--accent)}
+.tab .badge{margin-left:5px}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.pill.busy .dot{background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+/* ---------- buttons, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:9px;
+  border:1px solid var(--border-2);background:var(--surface);color:var(--ink);cursor:pointer;font-weight:550;
+  white-space:nowrap;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--surface-2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-primary{background:var(--btn);border-color:var(--btn);color:var(--btn-ink)}
+.btn-primary:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-sm{height:28px;padding:0 10px;font-size:13px;border-radius:8px}
+.btn-icon{width:32px;padding:0}
+.btn-danger{color:var(--critical-text)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);font-size:12px;font-weight:550;white-space:nowrap;border:1px solid transparent}
+.chip.out{background:transparent;border-color:var(--border-2)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--s0)}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+  background:var(--surface-3);color:var(--ink-2);font-size:11px;font-weight:650;font-variant-numeric:tabular-nums}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap;color:var(--muted)}
+.st.ready{color:var(--accent)}.st.applied{color:var(--good-text)}.st.saved{color:var(--ink-2)}
+.st.warn{color:var(--warning-text)}.st.bad{color:var(--critical-text)}
+/* ---------- layout */
+main{max-width:1240px;margin:0 auto;padding:22px 24px 40px}
+.view{display:grid;gap:18px;animation:fade .18s ease-out}
+@keyframes fade{from{opacity:.4;transform:translateY(3px)}to{opacity:1;transform:none}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;
+  min-width:0}
+.card-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.card-h .sub{font-size:12.5px;color:var(--muted)}
+.card-h .right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.grid-2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:18px;align-items:start}
+.grid-2e{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.stack{display:grid;gap:18px;min-width:0}
+.banner{max-width:1240px;margin:12px auto 0;padding:0 24px}
+.banner .b{display:flex;gap:10px;align-items:center;padding:9px 14px;border-radius:var(--r-sm);font-size:13px;
+  background:var(--accent-soft);color:var(--ink)}
+.banner .b.warn{background:var(--warning-soft)}.banner .b.bad{background:var(--critical-soft)}
+/* ---------- today */
+.hero-row{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.5fr);gap:18px}
+.hero{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:206px}
+.hero .eyebrow{font-size:13px;color:var(--muted)}
+.hero .big{display:flex;align-items:baseline;gap:12px;margin:10px 0 4px}
+.hero .big b{font-size:64px;line-height:1;font-weight:700;letter-spacing:-.04em}
+.hero .big span{font-size:18px;font-weight:600}
+.hero .hsub{color:var(--ink-2);font-size:13.5px}
+.hero .tracks{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(closest-side,var(--accent-soft),transparent);pointer-events:none}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.tile{display:flex;flex-direction:column;gap:2px;padding:16px 18px}
+.tile .label{font-size:12.5px;color:var(--muted);font-weight:550}
+.tile .value{font-size:30px;font-weight:650;letter-spacing:-.03em;line-height:1.2}
+.tile .foot{font-size:12.5px;color:var(--ink-2)}
+.track-head{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:16px 0 6px;font-size:13px;font-weight:650}
+.track-head .nm{white-space:nowrap}
+.track-head:first-child{margin-top:0}
+.track-head .muted{font-weight:500}
+.track-head .right{margin-left:auto}
+.matches{display:grid;gap:2px}
+.match{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;
+  border:0;background:none;padding:9px 10px;border-radius:11px;cursor:pointer;color:inherit}
+.match:hover{background:var(--surface-2)}
+.m-title{font-weight:620;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-meta{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-why{display:block;font-size:12.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.m-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.gap-chip{font-size:11.5px;color:var(--warning-text);background:var(--warning-soft);padding:1px 8px;border-radius:999px;
+  max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ring{position:relative;width:40px;height:40px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+  letter-spacing:-.02em}
+.ring.lg{width:92px;height:92px}.ring.lg b{font-size:26px;flex-direction:column;line-height:1}
+.ring.lg b small{font-size:11px;font-weight:550;color:var(--muted);margin-top:3px}
+.due{display:grid;gap:2px}
+.due-item{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;align-items:center;padding:8px 6px;border-radius:10px;
+  cursor:pointer;border:0;background:none;text-align:left;width:100%;color:inherit}
+.due-item:hover{background:var(--surface-2)}
+.datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;height:46px;border-radius:10px;
+  background:var(--surface-2);font-variant-numeric:tabular-nums}
+.datebox .mo{font-size:10.5px;text-transform:uppercase;color:var(--muted);font-weight:650;letter-spacing:.04em}
+.datebox .dy{font-size:17px;font-weight:700;line-height:1.1}
+.datebox.soon{background:var(--warning-soft)}.datebox.over{background:var(--critical-soft)}
+.datebox .icon{color:var(--muted)}
+.due-kind{font-size:11.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.due-t{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.due-s{font-size:12.5px;color:var(--ink-2)}
+.empty{padding:22px 12px;text-align:center;color:var(--muted);font-size:13px}
+.empty .t{color:var(--ink);font-weight:600;font-size:14px;margin-bottom:4px}
+.empty svg{width:28px;height:28px;color:var(--faint);margin-bottom:6px}
+/* ---------- charts */
+.chart{width:100%;display:block;overflow:visible}
+.chart text{font-family:var(--font);fill:var(--muted);font-size:11.5px}
+.chart .lbl{fill:var(--ink-2);font-size:12.5px}
+.chart .val{fill:var(--ink);font-size:12.5px;font-weight:650}
+.chart .grid{stroke:var(--grid);stroke-width:1}
+.chart .base{stroke:var(--axis);stroke-width:1}
+.chart .hit{fill:transparent;cursor:default}
+.chart .dcol:hover .seg,.chart .bar:hover .fill,.chart .dcol:focus .seg,.chart .bar:focus .fill{filter:brightness(1.12)}
+.chart .dcol:focus,.chart .bar:focus{outline:none}
+.chart .dcol:focus .hit,.chart .bar:focus .hit{stroke:var(--accent-ring);stroke-width:2}
+.chart .f1{fill:var(--f1)}.chart .f2{fill:var(--f2)}.chart .f3{fill:var(--f3)}.chart .f4{fill:var(--f4)}.chart .f5{fill:var(--f5)}
+.chart .soft{fill:var(--muted);font-weight:500}
+.ring .bg{stroke:var(--surface-3)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink-2);margin:-4px 0 10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.seg-toggle{display:inline-flex;border:1px solid var(--border-2);border-radius:8px;overflow:hidden}
+.seg-toggle button{border:0;background:none;padding:2px 9px;font-size:12px;cursor:pointer;color:var(--muted)}
+.seg-toggle button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);font-weight:600}
+.tip{position:fixed;z-index:80;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--border-2);
+  border-radius:10px;box-shadow:var(--shadow-lg);padding:8px 11px;font-size:12.5px;min-width:120px;max-width:260px}
+.tip .tt{font-weight:650;margin-bottom:4px}
+.tip .tr{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tip .tr .k{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2)}
+.tip .tr .k i{width:12px;height:2px;border-radius:1px;display:inline-block}
+.tip .tr b{font-variant-numeric:tabular-nums}
+.mini-table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.mini-table th,.mini-table td{text-align:right;padding:5px 6px;border-bottom:1px solid var(--grid)}
+.mini-table th:first-child,.mini-table td:first-child{text-align:left}
+.mini-table th{color:var(--muted);font-weight:600}
+/* ---------- report */
+.rep-lines{display:grid;gap:8px;font-size:13px}
+.rep-line{display:flex;gap:8px;align-items:center}.rep-line.top{align-items:flex-start}
+.rep-line .k{color:var(--muted);min-width:110px}
+.problem{display:flex;gap:8px;align-items:flex-start;color:var(--warning-text);font-size:12.5px}
+/* ---------- filters + table */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search{position:relative;flex:1 1 260px;max-width:380px}
+.search input{width:100%;height:34px;border:1px solid var(--border-2);border-radius:10px;background:var(--surface);
+  padding:0 34px 0 34px}
+.search svg{position:absolute;left:11px;top:9px;color:var(--muted)}
+.search kbd{position:absolute;right:9px;top:8px;font:11px var(--mono);color:var(--muted);border:1px solid var(--border-2);
+  border-radius:5px;padding:0 5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chipbtn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--border-2);
+  background:var(--surface);cursor:pointer;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.chipbtn:hover{background:var(--surface-2)}
+.chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chipbtn[aria-pressed="true"] .badge{background:color-mix(in srgb,var(--surface) 22%,transparent);color:var(--surface)}
+select,.input{height:34px;border:1px solid var(--border-2);border-radius:10px;background:var(--surface);padding:0 10px}
+textarea.input{height:auto;padding:8px 10px;resize:vertical;min-height:60px}
+.range{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.range input{accent-color:var(--btn);width:110px}
+.range output{min-width:26px;font-weight:650;color:var(--ink);font-variant-numeric:tabular-nums}
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:separate;border-spacing:0}
+.tbl th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);
+  white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+.tbl th button{border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+.tbl th button[aria-sort]::after{content:"↓";font-size:11px}
+.tbl th button[aria-sort="ascending"]::after{content:"↑"}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:middle}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover td{background:var(--surface-2)}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl .role b{font-weight:620;display:block}
+.tbl td.nw{white-space:nowrap}
+.tbl .role span{font-size:12.5px;color:var(--muted)}
+.score-cell{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-variant-numeric:tabular-nums}
+.score-cell .bar{width:44px;height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden;position:relative}
+.score-cell .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--accent)}
+.table-foot{display:flex;align-items:center;gap:10px;padding:12px 4px 0;font-size:12.5px;color:var(--muted)}
+/* ---------- board */
+.board{display:grid;grid-template-columns:repeat(6,minmax(176px,1fr));gap:12px;overflow-x:auto;padding-bottom:6px}
+.col{background:var(--surface-2);border-radius:var(--r);padding:10px;min-height:120px;display:flex;flex-direction:column;gap:8px}
+.col-h{display:flex;align-items:center;gap:8px;padding:2px 4px 4px;font-weight:650;font-size:13px}
+.col-h .badge{margin-left:auto}
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:10px 12px;cursor:pointer;text-align:left;
+  width:100%;color:inherit;box-shadow:var(--shadow);display:grid;gap:3px}
+.kcard:hover{border-color:var(--border-2)}
+.kcard .co{font-weight:650;display:flex;align-items:center;gap:6px}
+.kcard .co span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kcard .ro{font-size:12.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kcard .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:3px}
+.next{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.next.warn{background:var(--warning-soft);color:var(--warning-text)}
+.next.good{background:var(--good-soft);color:var(--good-text)}
+.funnel-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fchip{display:flex;flex-direction:column;padding:8px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);
+  min-width:96px}
+.fchip b{font-size:20px;letter-spacing:-.02em}
+.fchip span{font-size:12px;color:var(--muted)}
+.arrow{color:var(--faint)}
+/* ---------- referrals */
+.refs{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+.co-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 10px;border-radius:10px;
+  cursor:pointer;text-align:left;color:inherit}
+.co-item:hover{background:var(--surface-2)}
+.co-item[aria-current="true"]{background:var(--accent-soft)}
+.co-item .avatar{width:32px;height:32px;font-size:12px}
+.co-item .nm{font-weight:620;display:block}
+.co-item .ct{font-size:12px;color:var(--muted)}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;
+  font-size:13px;flex:none;background:var(--surface-3);color:var(--ink-2)}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;cursor:pointer;
+  text-align:left;color:inherit;display:grid;gap:8px;box-shadow:var(--shadow)}
+.pcard:hover{border-color:var(--border-2)}
+.pcard.dim{opacity:.62}
+.p-top{display:flex;gap:10px;align-items:center}
+.p-top .nm{font-weight:650;display:block}
+.p-top .tt{font-size:12.5px;color:var(--ink-2);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-why{font-size:12.5px;line-height:1.5;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  max-height:3em}
+.p-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.meter{position:relative;height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden;flex:1}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--accent)}
+.meter.warn i{background:var(--warning)}.meter.bad i{background:var(--critical)}
+.pscore{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:650;font-variant-numeric:tabular-nums}
+.pscore .meter{width:70px;flex:none}
+.form-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.form-row .input{flex:1 1 160px;min-width:0}
+.note-box{background:var(--surface-2);border-radius:11px;padding:11px 13px;font-size:13.5px;white-space:pre-wrap;line-height:1.55}
+.note-head{display:flex;align-items:center;gap:8px;margin:14px 0 6px}
+.note-head h3{margin:0}
+.note-head .right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.count{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.count.over{color:var(--critical-text);font-weight:650}
+ol.qs{margin:0;padding-left:20px;display:grid;gap:5px;font-size:13.5px}
+/* ---------- search tab */
+.meter-card .big{font-size:26px;font-weight:650;letter-spacing:-.02em}
+.meter-card .big small{font-size:13px;color:var(--muted);font-weight:500;margin-left:4px}
+.meter-card .meter{height:8px;border-radius:4px;margin:10px 0 8px}
+.meter-card .meter i{border-radius:4px}
+.meter-card .meter.track{background:color-mix(in srgb,var(--btn) 18%,var(--surface))}
+.meter-card .meta{font-size:12.5px;color:var(--ink-2);display:flex;gap:6px;align-items:center}
+.flist{display:grid;gap:2px;max-height:520px;overflow-y:auto}
+.fitem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:9px 8px;border-radius:10px;align-items:center}
+.fitem:hover{background:var(--surface-2)}
+.fitem .t{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.fitem .w{font-size:12.5px;color:var(--ink-2);display:block}
+.fitem .k{font-size:11px;font-weight:650;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.runs{display:grid;gap:0}
+.run{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;padding:9px 4px;border-bottom:1px solid var(--grid);
+  align-items:center;font-size:13px}
+.run:last-child{border-bottom:0}
+.run .d{font-weight:620;font-variant-numeric:tabular-nums}
+/* ---------- activity */
+.feed{display:grid}
+.feed .day{font-size:12px;font-weight:650;color:var(--muted);padding:14px 4px 6px;text-transform:uppercase;letter-spacing:.05em}
+.feed .day:first-child{padding-top:0}
+.ev{display:grid;grid-template-columns:66px 26px minmax(0,1fr);gap:10px;align-items:start;padding:7px 4px;border-radius:9px}
+.ev:hover{background:var(--surface-2)}
+.ev .tm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px;white-space:nowrap}
+.ev .ic{width:26px;height:26px;border-radius:8px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;
+  color:var(--ink-2)}
+.ev .ic svg{width:14px;height:14px}
+.ev .tx{font-size:13.5px;overflow-wrap:anywhere}
+.ev .kd{font-size:11.5px;color:var(--muted);display:block}
+/* ---------- drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;animation:fade .15s}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,100vw);z-index:60;background:var(--surface);
+  box-shadow:var(--shadow-lg);display:flex;flex-direction:column;animation:slide .2s ease-out;
+  border-left:1px solid var(--border)}
+@keyframes slide{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}
+.d-head{padding:18px 24px 14px;border-bottom:1px solid var(--border);padding-top:max(18px,env(safe-area-inset-top))}
+.d-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.d-top .right{margin-left:auto}
+.d-title{font-size:20px;line-height:1.3;letter-spacing:-.02em}
+.d-sub{font-size:13px;color:var(--ink-2);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.d-links{display:flex;gap:14px;margin-top:10px;font-size:13px;flex-wrap:wrap}
+.d-body{flex:1;overflow-y:auto;padding:18px 24px 30px;display:grid;gap:22px;align-content:start}
+.d-foot{border-top:1px solid var(--border);padding:12px 24px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding-bottom:max(12px,env(safe-area-inset-bottom));background:var(--surface)}
+.d-foot .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.sec h3{margin-bottom:9px}
+.score-top{display:flex;gap:18px;align-items:center}
+.score-top .info{display:grid;gap:4px}
+.score-top .cat{font-weight:650;font-size:14px}
+.score-top .cap{font-size:12.5px;color:var(--warning-text);display:flex;gap:6px;align-items:flex-start}
+.comp{display:grid;gap:5px;padding:11px 0;border-bottom:1px solid var(--grid)}
+.comp:last-child{border-bottom:0}
+.comp-h{display:grid;grid-template-columns:96px minmax(0,1fr) 58px;gap:12px;align-items:center}
+.comp-h .nm{font-weight:620;font-size:13px}
+.comp-h .meter{height:7px}
+.comp-h .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
+.comp-h .v small{color:var(--muted);font-weight:500}
+.comp .why{font-size:13px;color:var(--ink-2);padding-left:108px}
+.quote{display:flex;gap:8px;font-size:12.5px;color:var(--ink-2);margin-top:4px}
+.comp .quote{padding-left:108px;margin-top:0}
+.quote .src{flex:none;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:5px;
+  background:var(--surface-2);color:var(--muted);height:17px;line-height:15px}
+.quote .src.you{background:var(--accent-soft);color:var(--accent)}
+.quote q{quotes:"“" "”" "‘" "’";font-style:italic}
+.jd{white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--ink-2);background:var(--surface-2);border-radius:11px;
+  padding:12px 14px;max-height:420px;overflow-y:auto}
+details>summary{cursor:pointer;font-weight:600;font-size:13px;list-style:none;display:flex;align-items:center;gap:6px}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"›";display:inline-block;transition:transform .15s;color:var(--muted);font-size:15px}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary+*{margin-top:10px}
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:6px 12px;font-size:13px}
+.kv .k{color:var(--muted)}
+.stepper{display:flex;gap:4px;align-items:center}
+.step{flex:1;display:grid;gap:5px;justify-items:center;font-size:11.5px;color:var(--muted);text-align:center}
+.step i{width:100%;height:5px;border-radius:3px;background:var(--surface-3)}
+.step.done i{background:var(--f3)}.step.cur{color:var(--ink);font-weight:650}.step.cur i{background:var(--btn)}
+.step.closed i{background:var(--faint)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.inline-form{display:grid;gap:10px;background:var(--surface-2);padding:12px;border-radius:12px;margin-top:10px}
+.inline-form label{display:grid;gap:4px;font-size:12.5px;color:var(--ink-2)}
+.tl{display:grid;gap:0;position:relative}
+.tl-i{display:grid;grid-template-columns:86px 14px minmax(0,1fr);gap:10px;padding:6px 0;font-size:13px}
+.tl-i .d{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px}
+.tl-i .m{width:9px;height:9px;border-radius:50%;background:var(--axis);margin-top:5px}
+.tl-i.key .m{background:var(--btn)}
+.tl-i .n{display:block;color:var(--ink-2);font-size:12.5px}
+.file{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:11px}
+.file .nm{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---------- toasts, login */
+.toasts{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:90;display:grid;
+  gap:8px;justify-items:center;pointer-events:none}
+.toast{background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:12px;font-size:13.5px;box-shadow:var(--shadow-lg);
+  max-width:min(92vw,520px);animation:fade .18s;pointer-events:auto}
+.toast.bad{background:var(--critical);color:#fff}
+.login{position:fixed;inset:0;z-index:100;background:var(--page);display:flex;align-items:center;justify-content:center;padding:24px}
+.login .card{max-width:420px;width:100%;padding:28px;display:grid;gap:14px}
+.login p{margin:0;color:var(--ink-2);font-size:13.5px}
+code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:5px}
+/* ---------- responsive */
+@media (max-width:1080px){
+  .grid-2,.hero-row{grid-template-columns:minmax(0,1fr)}
+  .refs{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:860px){
+  .top-in{flex-wrap:wrap;padding:10px 16px 0;gap:10px}
+  .tabs{order:3;width:100%;margin:0 -16px;padding:0 10px;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab[aria-selected="true"]::after{bottom:0}
+  .tab{padding:9px 11px}
+  .ws{display:none}
+  main{padding:16px 16px 40px}
+  .banner{padding:0 16px}
+  .grid-2e,.grid-3{grid-template-columns:minmax(0,1fr)}
+  .card{padding:16px}
+  .pill{display:none}
+}
+@media (max-width:620px){
+  .kpis{gap:12px}
+  .tile{padding:14px}
+  .tile .value{font-size:26px}
+  .hero .big b{font-size:54px}
+  .match{grid-template-columns:40px minmax(0,1fr)}
+  .m-side{display:none}
+  .tbl thead{display:none}
+  .tbl,.tbl tbody,.tbl tr,.tbl td{display:block;width:100%}
+  .tbl tr{border-bottom:1px solid var(--grid);padding:10px 4px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px}
+  .tbl td{border:0;padding:0}
+  .tbl td.c-score{grid-row:span 3;align-self:center}
+  .tbl td.c-track,.tbl td.c-loc,.tbl td.c-posted{display:none}
+  .tbl tbody tr:hover td{background:none}
+  .comp-h{grid-template-columns:84px minmax(0,1fr) 52px}
+  .comp .why,.comp .quote{padding-left:0}
+  .d-head,.d-body,.d-foot{padding-left:16px;padding-right:16px}
+  .btn-run .lbl{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.shot *{animation:none!important;transition:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#tab=today" aria-label="JobPilot">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect class="b1" width="32" height="32" rx="9"/>
+        <path class="b2" d="M7 17.5 25 8l-5.2 17-4.6-6.1L7 17.5Z"/><path class="b2 b3" d="m15.2 18.9 4.6 6.1 1.1-9.4-5.7 3.3Z"/></svg>
+      <span>JobPilot</span></a>
+    <span class="ws" id="ws-name"></span>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div class="top-right">
+      <span class="pill" id="run-pill"><i class="dot"></i><span class="lbl"></span></span>
+      <button class="btn btn-sm btn-primary btn-run" data-act="run-daily" id="run-btn"></button>
+      <button class="btn btn-sm btn-ghost" data-act="lang" id="lang-btn"></button>
+      <button class="btn btn-sm btn-ghost btn-icon" data-act="theme" id="theme-btn"></button>
+    </div>
+  </div>
+</header>
+<div class="banner" id="banner" hidden></div>
+<main id="main">
+  <section class="view" id="view-today" hidden></section>
+  <section class="view" id="view-pool" hidden></section>
+  <section class="view" id="view-apps" hidden></section>
+  <section class="view" id="view-refs" hidden></section>
+  <section class="view" id="view-search" hidden></section>
+  <section class="view" id="view-activity" hidden></section>
+</main>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" hidden></aside>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="login" id="login" hidden></div>
+<!--STATIC-->
+<script nonce="{{NONCE}}">
+(() => {
+'use strict';
+const BOOT = /*BOOT*/null || {mode: 'live'};
+const ERRS = [];
+const noteErr = m => { ERRS.push(String(m).slice(0, 200)); document.documentElement.dataset.jpErrors = ERRS.join(' | '); };
+window.addEventListener('error', e => noteErr(e.message));
+window.addEventListener('unhandledrejection', e => noteErr(e.reason && e.reason.message || e.reason));
+const STATIC = BOOT.mode === 'static' ? JSON.parse((document.getElementById('jp-static') || {}).textContent || '{}') : null;
+
+/* ------------------------------------------------------------------ i18n */
+const I18N = {
+en: {
+  tab_today:'Today', tab_pool:'Job pool', tab_apps:'Applications', tab_refs:'Referrals', tab_search:'Search', tab_activity:'Activity',
+  run_now:'Run now', running:'Running', lang_other:'中文', theme:'Switch theme',
+  demo_banner:'Demo workspace — every company, person and posting here is fictional. Paid actions are turned off.',
+  static_banner:'Interactive preview with fictional data. Changes are not saved.',
+  paused_banner:'Paid searches are paused. Run `jobpilot resume` to turn them back on.',
+  greet_m:'Good morning', greet_a:'Good afternoon', greet_e:'Good evening',
+  hero_label:'new matches today', hero_sub:'{ready} ready to apply across {tracks} tracks',
+  last_run:'Daily search ran {when}', no_run:'No daily search has run yet',
+  kpi_ready:'Ready to apply', kpi_ready_f:'best first, one per company',
+  kpi_week:'Applied this week', kpi_week_f:'{n} applied in total',
+  kpi_iv:'Interviews', kpi_iv_f:'{n} coming up', kpi_iv_none:'none scheduled',
+  kpi_resp:'Response rate', kpi_resp_f:'{n} of {total} heard back', kpi_resp_none:'no applications yet',
+  top:'Top matches', top_sub:'Best per company first, then by score', see_all:'See all',
+  n_new:'{n} new today', n_ready:'{n} ready',
+  empty_matches_t:'No matches waiting', empty_matches:'New postings arrive with the next daily search.',
+  up_next:'Up next', due_oa:'Assessment due', due_iv:'Interview', due_fu:'Follow up', fu_days:'Applied {n} days ago, no reply yet',
+  overdue:'overdue', nothing_due_t:'Nothing due this week', nothing_due:'Deadlines, interviews and follow-ups show up here.',
+  pipeline:'Pipeline', pipeline_sub:'Every application you have sent',
+  f_applied:'Applied', f_responded:'Heard back', f_oa:'Assessment', f_interview:'Interview', f_offer:'Offer',
+  per_day:'Matches per day', per_day_sub:'Postings admitted to the pool, last 7 days', chart:'Chart', table:'Table', total:'Total', day:'Day',
+  of_prev:'{p}% of the previous stage',
+  report:"Today's report", report_none_t:'No report yet', report_none:'`jobpilot daily` writes one after each run.',
+  r_new:'New matches', r_queue:'In the queue', r_spend:'Search spend', r_problems:'Problems',
+  search_ph:'Search title, company or location',
+  all:'All', st_ready:'Ready', st_saved:'Saved', st_applied:'Applied', st_skipped:'Skipped', st_below:'Below bar',
+  st_excluded:'Not a fit', st_filtered:'Filtered', st_pending:'In review', st_stale:'Stale', st_admitted:'In the pool', st_all:'Everything',
+  min_score:'Min score', sort_score:'Best score', sort_posted:'Newest', sort_company:'Company', sort_title:'Title',
+  c_score:'Score', c_role:'Role', c_track:'Track', c_loc:'Location', c_posted:'Posted', c_status:'Status',
+  showing:'Showing {n} of {total}', more:'Show more', empty_pool_t:'Nothing matches', empty_pool:'Try another status or clear the search.',
+  open_posting:'Open posting', apply_page:'Apply page', fit:'Fit score', of10:'of 10',
+  duties_4:'Duties', background_3:'Background', skills_2:'Skills', seniority_1:'Seniority', src_jd:'JD', src_you:'You',
+  capped:'Capped at {cap}', gaps:'Gaps', no_gaps:'No gaps found.', why_track:'Why this track', jd_text:'Full job description',
+  recruiter:'Recruiter on the posting', a_tailor:'Tailor resume', a_save:'Save to apply', a_applied:'Mark applied', a_skip:'Skip',
+  a_hold:'Hold', a_ready:'Back to ready', confirm:'Confirm', cancel:'Cancel', applied_on:'Applied on', save:'Save',
+  tailored:'Tailored resumes', lint_ok:'Checks passed', lint_warn:'{n} warning(s)', lint_err:'{n} problem(s)', no_files:'Files are not generated in the demo',
+  refs_here:'{n} alumni found at this company', view:'View', filtered_why:'Why it was filtered out', application:'Application', open:'Open',
+  eligibility:'Eligibility notes', summary_ai:'Summary from the job board',
+  b_saved:'Saved', b_applied:'Applied', b_assessment:'Assessment', b_interview:'Interview', b_offer:'Offer', b_closed:'Closed',
+  empty_col:'Nothing here yet', add_app:'Add application', company:'Company', role:'Role', link:'Link (optional)', already:'I already applied',
+  next_oa:'OA due {when}', next_iv:'{when}', next_fu:'Follow up · {n}d',
+  stage_planned:'Saved', stage_applied:'Applied', stage_oa:'Assessment', stage_interview:'Interview', stage_offer:'Offer',
+  stage_rejected:'Rejected', stage_withdrawn:'Withdrawn', stage_closed:'Closed',
+  ev_created:'Saved to apply', ev_tailored:'Resume tailored', ev_applied:'Applied', ev_receipt:'Application received', ev_referral:'Referral',
+  ev_followup_sent:'Follow-up sent', ev_recruiter_reply:'Recruiter replied', ev_oa_invited:'Assessment invited', ev_oa_done:'Assessment done',
+  ev_interview_invited:'Interview invited', ev_interview_scheduled:'Interview scheduled', ev_interview_done:'Interview done', ev_offer:'Offer',
+  ev_rejected:'Rejected', ev_withdrawn:'Withdrawn', ev_closed:'Closed (no response)', ev_reopened:'Reopened', ev_note:'Note',
+  ev_void:'Voided', ev_edited:'Details edited',
+  e_applied:'Mark applied', e_oa_invited:'Got an assessment', e_oa_done:'Assessment done', e_interview_invited:'Interview invite',
+  e_interview_scheduled:'Schedule interview', e_interview_done:'Interview done', e_offer:'Got an offer', e_rejected:'Rejected',
+  e_withdrawn:'Withdraw', e_closed:'No response, close', e_recruiter_reply:'Recruiter replied', e_followup_sent:'Follow-up sent',
+  e_note:'Add note', e_reopened:'Reopen', e_void:'Recorded by mistake',
+  f_date:'Date', f_deadline:'Deadline', f_time:'Interview time', f_note:'Note', timeline:'Timeline', notes:'Notes',
+  inbox_last:'Gmail tracking · last scan {when}', inbox_never:'Gmail tracking has not run yet — /jobpilot:inbox',
+  inbox_unmatched:'{n} job email(s) need an application', referred_by:'Referred by {who}',
+  companies:'Companies', refs_empty_t:'Find your people', refs_empty:'People at a target company who went to your schools are often the warmest path to a referral.',
+  find:'Find alumni', company_ph:'Company name', url_ph:'LinkedIn company URL (optional)',
+  people_n:'{n} people', kept_n:'{n} kept', cards_n:'{n} cards', contacted_n:'{n} contacted', write_cards:'Write cards',
+  recruiter_b:'Recruiter', skipped_b:'Skipped', pick_company:'Pick a company', refs_note:'JobPilot never sends anything: copy a note and send it yourself on LinkedIn.',
+  p_why:'Why this person', p_scores:'Scores', role_s:'Role fit', alumni_s:'Alumni', path_s:'Path', reply_s:'Likely to reply', help_s:'Can help',
+  card_note:'Connection note', card_alumni:'Alumni version', card_message:'After they accept', card_followup:'Follow-up',
+  card_questions:'Coffee chat questions', hooks:'Talking points', avoid:'Avoid', copy:'Copy', copied:'Copied', chars:'{n}/{max}',
+  no_card:'No card yet — run “Write cards” for this company.', profile:'Profile', history:'History', education:'Education', experience:'Experience',
+  m_connect_sent:'Sent the request', m_accepted:'Accepted', m_message_sent:'Sent the message', m_replied:'Replied', m_chat_scheduled:'Chat scheduled',
+  m_chat_done:'Chat done', m_referred:'Referred me', m_declined:'Declined', m_no_response:'No response', m_dropped:'Drop', m_undo:'Undo last',
+  ps_new:'New', ps_card_ready:'Card ready', ps_connect_sent:'Request sent', ps_accepted:'Connected', ps_messaged:'Messaged',
+  ps_replied:'Replied', ps_chat_scheduled:'Chat scheduled', ps_chat_done:'Chat done', ps_referred:'Referred', ps_declined:'Declined',
+  ps_no_response:'No response', ps_dropped:'Dropped', link_hidden:'Profile links are hidden in the demo.', open_li:'Open LinkedIn profile',
+  budget_today:"Today's search budget", budget_month:'This month', near_cap:'Near the cap', at_cap:'Cap reached', left:'{v} left',
+  schedule:'Daily run', sched_on:'Every day at {time}', sched_off:'Not scheduled yet', sched_hint:'/jobpilot:schedule sets it up',
+  last_daily:'Last run {when}', groups:'Search groups', groups_sub:'One Apify run per group; tune the plan with /jobpilot:tune',
+  g_group:'Group', g_budget:'Cap', g_last:'Last run', g_week:'7 days', g_admit:'Admitted', rows_new:'{rows} rows · {new} new',
+  capped_b:'Hit its cap', runs:'Recent runs', run_line:'{rows} postings · {new} new', incomplete:'incomplete',
+  filtered:'Filtered out', filtered_sub:'Skim these now and then: a wrong drop means a rule to loosen.',
+  k_filter:'Coarse filter', k_excluded:'Not a fit', k_below:'Below bar', restore:'Restore',
+  activity:'Activity', empty_act_t:'Nothing yet', empty_act:'Searches, reviews and applications show up here.',
+  kind_collect:'Search', kind_review:'Review', kind_daily:'Daily run', kind_app:'Application', kind_net:'Referrals', kind_tailor:'Resume',
+  kind_pool:'Pool', kind_system:'System', kind_inbox:'Inbox', kind_error:'Error',
+  login_t:'Sign in to your dashboard', login_p:'Open the link that `jobpilot dashboard` printed, or paste the key from data/dashboard.token.',
+  key:'Key', sign_in:'Sign in', bad_key:'That key does not match.',
+  err:'Something went wrong: {msg}', saved:'Saved', started:'Started in the background — this page updates when it finishes.',
+  task_done:'{kind} finished', task_failed:'{kind} failed — see data/logs', offline:'Cannot reach the dashboard. Is `jobpilot dashboard` still running?',
+  task_daily:'Daily run', task_tailor:'Tailoring', 'task_net-find':'Alumni search', 'task_net-cards':'Card writing',
+  static_write:'This preview is read-only — install JobPilot to use it for real.',
+  now:'just now', today:'Today', yesterday:'Yesterday', score:'score', none:'—',
+},
+zh: {
+  tab_today:'今日', tab_pool:'岗位库', tab_apps:'投递', tab_refs:'内推', tab_search:'搜索', tab_activity:'动态',
+  run_now:'立即运行', running:'运行中', lang_other:'English', theme:'切换主题',
+  demo_banner:'演示工作区——这里的公司、人物和岗位全部是虚构的，付费操作已关闭。',
+  static_banner:'虚构数据的交互预览，修改不会保存。',
+  paused_banner:'付费搜索已暂停。运行 `jobpilot resume` 恢复。',
+  greet_m:'早上好', greet_a:'下午好', greet_e:'晚上好',
+  hero_label:'个今日新匹配', hero_sub:'{ready} 个可投岗位，覆盖 {tracks} 个方向',
+  last_run:'每日搜索于 {when} 完成', no_run:'还没有运行过每日搜索',
+  kpi_ready:'可投岗位', kpi_ready_f:'按匹配度排序，每家公司先推一个',
+  kpi_week:'本周已投', kpi_week_f:'累计已投 {n} 个',
+  kpi_iv:'面试', kpi_iv_f:'{n} 场即将进行', kpi_iv_none:'暂无安排',
+  kpi_resp:'回复率', kpi_resp_f:'{total} 个投递中 {n} 个有回音', kpi_resp_none:'还没有投递',
+  top:'最佳匹配', top_sub:'每家公司先推最好的一个，再按分数排序', see_all:'查看全部',
+  n_new:'今日新增 {n}', n_ready:'{n} 个可投',
+  empty_matches_t:'暂时没有待投岗位', empty_matches:'下一次每日搜索会带来新岗位。',
+  up_next:'接下来', due_oa:'测评截止', due_iv:'面试', due_fu:'跟进', fu_days:'投递 {n} 天，还没有回复',
+  overdue:'已逾期', nothing_due_t:'本周没有待办', nothing_due:'截止日期、面试和跟进提醒会出现在这里。',
+  pipeline:'投递漏斗', pipeline_sub:'你投出的每一份申请',
+  f_applied:'已投递', f_responded:'有回音', f_oa:'测评', f_interview:'面试', f_offer:'Offer',
+  per_day:'每日新匹配', per_day_sub:'近 7 天进入岗位库的岗位', chart:'图表', table:'表格', total:'合计', day:'日期',
+  of_prev:'上一阶段的 {p}%',
+  report:'今日报告', report_none_t:'还没有报告', report_none:'每次运行 `jobpilot daily` 后都会生成一份。',
+  r_new:'新匹配', r_queue:'队列中', r_spend:'搜索花费', r_problems:'问题',
+  search_ph:'搜索职位、公司或地点',
+  all:'全部', st_ready:'可投', st_saved:'已保存', st_applied:'已投递', st_skipped:'已跳过', st_below:'低于门槛',
+  st_excluded:'不匹配', st_filtered:'已粗筛', st_pending:'待评审', st_stale:'已过期', st_admitted:'库内全部', st_all:'所有岗位',
+  min_score:'最低分', sort_score:'分数最高', sort_posted:'最新发布', sort_company:'公司', sort_title:'职位',
+  c_score:'分数', c_role:'职位', c_track:'方向', c_loc:'地点', c_posted:'发布', c_status:'状态',
+  showing:'显示 {n} / {total}', more:'显示更多', empty_pool_t:'没有符合条件的岗位', empty_pool:'换一个状态，或清空搜索。',
+  open_posting:'打开岗位', apply_page:'申请页面', fit:'匹配分', of10:'/ 10',
+  duties_4:'职责', background_3:'背景', skills_2:'技能', seniority_1:'资历', src_jd:'JD', src_you:'你',
+  capped:'封顶 {cap}', gaps:'差距', no_gaps:'没有发现差距。', why_track:'为什么归入这个方向', jd_text:'完整职位描述',
+  recruiter:'岗位上的招聘人', a_tailor:'定制简历', a_save:'保存待投', a_applied:'标记已投', a_skip:'跳过',
+  a_hold:'暂缓', a_ready:'恢复可投', confirm:'确认', cancel:'取消', applied_on:'投递日期', save:'保存',
+  tailored:'定制简历', lint_ok:'检查通过', lint_warn:'{n} 个提醒', lint_err:'{n} 个问题', no_files:'演示中不生成文件',
+  refs_here:'这家公司找到 {n} 位校友', view:'查看', filtered_why:'被过滤的原因', application:'投递记录', open:'打开',
+  eligibility:'资格提示', summary_ai:'招聘网站摘要',
+  b_saved:'待投', b_applied:'已投', b_assessment:'测评', b_interview:'面试', b_offer:'Offer', b_closed:'已结束',
+  empty_col:'暂无', add_app:'添加投递', company:'公司', role:'职位', link:'链接（可选）', already:'我已经投了',
+  next_oa:'测评 {when} 截止', next_iv:'{when}', next_fu:'该跟进 · {n} 天',
+  stage_planned:'待投', stage_applied:'已投递', stage_oa:'测评', stage_interview:'面试', stage_offer:'Offer',
+  stage_rejected:'被拒', stage_withdrawn:'已撤回', stage_closed:'已关闭',
+  ev_created:'保存待投', ev_tailored:'简历已定制', ev_applied:'已投递', ev_receipt:'已收到确认', ev_referral:'内推',
+  ev_followup_sent:'已发跟进', ev_recruiter_reply:'招聘方回复', ev_oa_invited:'收到测评', ev_oa_done:'完成测评',
+  ev_interview_invited:'收到面试邀请', ev_interview_scheduled:'约定面试', ev_interview_done:'完成面试', ev_offer:'拿到 Offer',
+  ev_rejected:'被拒', ev_withdrawn:'已撤回', ev_closed:'已关闭（无回复）', ev_reopened:'重新打开', ev_note:'备注',
+  ev_void:'已撤销', ev_edited:'修改信息',
+  e_applied:'标记已投', e_oa_invited:'收到测评', e_oa_done:'完成测评', e_interview_invited:'收到面试邀请',
+  e_interview_scheduled:'约面试时间', e_interview_done:'面试完成', e_offer:'拿到 Offer', e_rejected:'被拒',
+  e_withdrawn:'撤回', e_closed:'无回复，关闭', e_recruiter_reply:'招聘方回复', e_followup_sent:'已发跟进',
+  e_note:'添加备注', e_reopened:'重新打开', e_void:'误记，撤销',
+  f_date:'日期', f_deadline:'截止日期', f_time:'面试时间', f_note:'备注', timeline:'时间线', notes:'备注',
+  inbox_last:'Gmail 追踪 · 上次扫描 {when}', inbox_never:'Gmail 追踪还没有运行——/jobpilot:inbox',
+  inbox_unmatched:'{n} 封求职邮件没匹配到投递', referred_by:'内推人 {who}',
+  companies:'公司', refs_empty_t:'找到你的校友', refs_empty:'目标公司里和你同校的人，往往是拿到内推最自然的路径。',
+  find:'查找校友', company_ph:'公司名称', url_ph:'LinkedIn 公司链接（可选）',
+  people_n:'{n} 人', kept_n:'保留 {n}', cards_n:'卡片 {n}', contacted_n:'已联系 {n}', write_cards:'生成卡片',
+  recruiter_b:'招聘', skipped_b:'已跳过', pick_company:'选择一家公司', refs_note:'JobPilot 不会替你发送任何内容：复制文字，自己在 LinkedIn 上发送。',
+  p_why:'为什么推荐', p_scores:'评分', role_s:'岗位相关', alumni_s:'校友关系', path_s:'背景相似', reply_s:'回复可能', help_s:'帮助能力',
+  card_note:'好友请求附言', card_alumni:'校友版本', card_message:'通过后发送', card_followup:'跟进消息',
+  card_questions:'咖啡聊问题', hooks:'可以聊的话题', avoid:'避免', copy:'复制', copied:'已复制', chars:'{n}/{max}',
+  no_card:'还没有卡片——为这家公司点“生成卡片”。', profile:'资料', history:'记录', education:'教育', experience:'经历',
+  m_connect_sent:'已发请求', m_accepted:'已通过', m_message_sent:'已发消息', m_replied:'已回复', m_chat_scheduled:'已约聊',
+  m_chat_done:'已聊完', m_referred:'已内推', m_declined:'婉拒', m_no_response:'无回复', m_dropped:'放弃', m_undo:'撤销上一步',
+  ps_new:'新', ps_card_ready:'卡片就绪', ps_connect_sent:'已发请求', ps_accepted:'已连接', ps_messaged:'已发消息',
+  ps_replied:'已回复', ps_chat_scheduled:'已约聊', ps_chat_done:'已聊', ps_referred:'已内推', ps_declined:'婉拒',
+  ps_no_response:'无回复', ps_dropped:'已放弃', link_hidden:'演示中隐藏了个人主页链接。', open_li:'打开 LinkedIn 主页',
+  budget_today:'今日搜索预算', budget_month:'本月', near_cap:'接近上限', at_cap:'已达上限', left:'剩余 {v}',
+  schedule:'每日自动运行', sched_on:'每天 {time}', sched_off:'还没有设置', sched_hint:'用 /jobpilot:schedule 设置',
+  last_daily:'上次运行 {when}', groups:'搜索组', groups_sub:'每组一次 Apify 运行；用 /jobpilot:tune 调整方案',
+  g_group:'组', g_budget:'上限', g_last:'上次', g_week:'近 7 天', g_admit:'入库率', rows_new:'{rows} 条 · 新 {new}',
+  capped_b:'达到上限', runs:'最近运行', run_line:'{rows} 个岗位 · 新 {new}', incomplete:'不完整',
+  filtered:'被过滤的岗位', filtered_sub:'偶尔看一眼：如果误杀了，就该放宽规则。',
+  k_filter:'粗筛', k_excluded:'不匹配', k_below:'低于门槛', restore:'恢复',
+  activity:'动态', empty_act_t:'还没有动态', empty_act:'搜索、评审和投递记录都会出现在这里。',
+  kind_collect:'搜索', kind_review:'评审', kind_daily:'每日运行', kind_app:'投递', kind_net:'内推', kind_tailor:'简历',
+  kind_pool:'岗位库', kind_system:'系统', kind_inbox:'邮件', kind_error:'错误',
+  login_t:'登录你的面板', login_p:'打开 `jobpilot dashboard` 打印的链接，或粘贴 data/dashboard.token 里的密钥。',
+  key:'密钥', sign_in:'登录', bad_key:'密钥不对。',
+  err:'出错了：{msg}', saved:'已保存', started:'已在后台开始，完成后页面会自动更新。',
+  task_done:'{kind}已完成', task_failed:'{kind}失败——查看 data/logs', offline:'连不上面板。`jobpilot dashboard` 还在运行吗？',
+  task_daily:'每日运行', task_tailor:'定制简历', 'task_net-find':'校友搜索', 'task_net-cards':'生成卡片',
+  static_write:'这是只读预览——安装 JobPilot 才能真正使用。',
+  now:'刚刚', today:'今天', yesterday:'昨天', score:'分', none:'—',
+}};
+let LANG = 'en';
+function t(key, vars) {
+  let s = (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined && vars[k] !== null ? vars[k] : m));
+  return s;
+}
+
+/* ------------------------------------------------------------------ safe HTML */
+const RAW = Symbol('raw');
+const raw = s => ({[RAW]: String(s)});
+const esc = v => String(v === undefined || v === null ? '' : v).replace(/[&<>"']/g,
+  c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+function piece(v) {
+  if (Array.isArray(v)) return v.map(piece).join('');
+  if (v && typeof v === 'object' && RAW in v) return v[RAW];
+  if (v === false || v === undefined || v === null) return '';
+  return esc(v);
+}
+function h(strings, ...vals) {
+  let out = strings[0];
+  vals.forEach((v, i) => { out += piece(v) + strings[i + 1]; });
+  return raw(out);
+}
+const md = s => raw(esc(s).replace(/`([^`]+)`/g, '<code>$1</code>'));
+const html = (el, frag) => { el.innerHTML = frag[RAW]; widths(el); return el; };
+function widths(root) {
+  root.querySelectorAll('[data-w]').forEach(el => { el.style.width = Math.max(0, Math.min(100, +el.dataset.w)) + '%'; });
+}
+const safeUrl = u => (/^https?:\/\//i.test(u || '') ? u : '');
+const $ = (s, r = document) => r.querySelector(s);
+
+/* ------------------------------------------------------------------ icons */
+const IP = {
+  search: 'M10.5 18a7.5 7.5 0 1 1 5.3-2.2L21 21',
+  sun: 'M12 4V2m0 20v-2m8-8h2M2 12h2m13.7-5.7 1.4-1.4M4.9 19.1l1.4-1.4m0-11.4L4.9 4.9m14.2 14.2-1.4-1.4M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z',
+  moon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z',
+  half: 'M12 3a9 9 0 1 0 0 18V3Z M12 3a9 9 0 1 1 0 18',
+  spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z',
+  brief: 'M4 8h16v11H4zM9 8V5h6v3',
+  people: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 9a6 6 0 0 1 12 0m1-9a3 3 0 1 0 0-6m2 15a5 5 0 0 0-3-4.6',
+  doc: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',
+  tag: 'M3 12V4h8l10 10-8 8L3 12Zm5-5h.01',
+  gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.5 7.5 0 0 0-.1-1.3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2.2-1.3L14.4 3h-4l-.4 2.4a7.6 7.6 0 0 0-2.2 1.3l-2.4-1-2 3.4 2 1.6a7.5 7.5 0 0 0 0 2.6l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2.2 1.3l.4 2.4h4l.4-2.4a7.6 7.6 0 0 0 2.2-1.3l2.4 1 2-3.4-2-1.6c.1-.4.1-.9.1-1.3Z',
+  mail: 'M3 6h18v12H3zM3 7l9 6 9-6',
+  alert: 'M12 3 2 20h20L12 3Zm0 6v5m0 3h.01',
+  check: 'M5 12.5 10 17l9-10',
+  x: 'M6 6l12 12M18 6 6 18',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v5l3 2',
+  down: 'M12 5v14m-6-6 6 6 6-6',
+  funnel: 'M3 5h18l-7 8v6l-4-2v-4L3 5Z',
+  bookmark: 'M6 3h12v18l-6-4-6 4V3Z',
+  ext: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  play: 'M7 5v14l11-7L7 5Z',
+  close: 'M6 6l12 12M18 6 6 18',
+  calendar: 'M4 6h16v14H4zM4 10h16M8 3v4m8-4v4',
+  inbox: 'M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6l2-8Z',
+  flag: 'M5 21V4h11l-2 4 2 4H5',
+  star: 'M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8Z',
+};
+const icon = (name, cls = 'icon') => raw('<svg class="' + cls + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + IP[name] + '"/></svg>');
+const KIND_ICON = {collect: 'search', review: 'spark', daily: 'sun', app: 'brief', net: 'people', tailor: 'doc', pool: 'tag', system: 'gear', inbox: 'mail', error: 'alert'};
+
+/* ------------------------------------------------------------------ formatting */
+const locale = () => (LANG === 'zh' ? 'zh-CN' : 'en-US');
+function fmtNum(n, d = 0) { return n === null || n === undefined ? t('none') : Number(n).toLocaleString(locale(), {maximumFractionDigits: d, minimumFractionDigits: d}); }
+function money(n) { return '$' + Number(n || 0).toFixed(2); }
+function pct(n) { return n === null || n === undefined ? t('none') : Math.round(n * 100) + '%'; }
+function parseT(v) { if (!v) return null; const s = /^\d{4}-\d{2}-\d{2}$/.test(v) ? v + 'T12:00:00' : v; const d = new Date(s); return isNaN(d) ? null : d; }
+function ago(v) {
+  const d = parseT(v); if (!d) return '';
+  const sec = (Date.now() - d.getTime()) / 1000;
+  const rtf = new Intl.RelativeTimeFormat(locale(), {numeric: 'auto'});
+  const a = Math.abs(sec);
+  if (a < 60) return t('now');
+  if (a < 3600) return rtf.format(-Math.round(sec / 60), 'minute');
+  if (a < 86400) return rtf.format(-Math.round(sec / 3600), 'hour');
+  if (a < 86400 * 30) return rtf.format(-Math.round(sec / 86400), 'day');
+  return rtf.format(-Math.round(sec / (86400 * 30)), 'month');
+}
+function dateShort(v) { const d = parseT(v); return d ? d.toLocaleDateString(locale(), {month: 'short', day: 'numeric'}) : ''; }
+function dateLong(v) { const d = parseT(v); return d ? d.toLocaleDateString(locale(), {weekday: 'short', month: 'short', day: 'numeric'}) : ''; }
+function timeShort(v) { const d = parseT(v); return d ? d.toLocaleTimeString(locale(), {hour: 'numeric', minute: '2-digit'}) : ''; }
+function dateTime(v) { const d = parseT(v); return d ? dateShort(v) + ' ' + timeShort(v) : ''; }
+function dayKey(v) { const d = parseT(v); return d ? d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') : ''; }
+const cap1 = s => { s = String(s || ''); return /^[a-z]/.test(s) ? s[0].toUpperCase() + s.slice(1) : s; };
+const shortLoc = s => String(s || '').replace(/, United States$/, '').replace(/ \| .*$/, '');
+const initials = n => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+const todayIso = () => dayKey(new Date());
+
+/* ------------------------------------------------------------------ data access */
+let S = null;               // session
+const state = {tab: 'today', poolq: {status: 'ready', track: '', q: '', min: 0, sort: 'score', order: 'desc', limit: 50},
+  refsCompany: null, filteredKind: '', cache: {}, tasks: [], lastFetch: 0, drawer: null, chartMode: {}, fetching: false};
+
+async function api(name, params) {
+  if (STATIC) return staticApi(name, params || {});
+  const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v !== null && v !== undefined)).toString() : '';
+  const res = await fetch('/api/' + name + qs, {credentials: 'same-origin', headers: {Accept: 'application/json'}});
+  if (res.status === 401) { showLogin(); throw new Error('sign in'); }
+  const data = await res.json().catch(() => ({error: res.statusText}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+async function post(name, body) {
+  if (STATIC) { toast(t('static_write')); return null; }
+  const res = await fetch('/api/' + name, {method: 'POST', credentials: 'same-origin',
+    headers: {'Content-Type': 'application/json', 'X-JobPilot-CSRF': (S && S.csrf) || ''}, body: JSON.stringify(body || {})});
+  const data = await res.json().catch(() => ({error: res.statusText}));
+  if (res.status === 401) { showLogin(); return null; }
+  if (!res.ok) { toast(data.error || res.statusText, true); return null; }
+  return data;
+}
+const STATUS_GROUPS = {ready: ['ready'], saved: ['hold'], applied: ['applied'], skipped: ['skipped'], below: ['below_threshold'],
+  excluded: ['excluded'], filtered: ['dropped'], pending: ['pending'], stale: ['stale'], admitted: ['ready', 'hold', 'applied', 'skipped'], all: null};
+function staticApi(name, q) {
+  const D = STATIC;
+  const one = (k, id) => { const v = (D[k] || {})[id]; if (!v) throw new Error('not found'); return v; };
+  switch (name) {
+    case 'session': return Object.assign({}, D.session, {static: true});
+    case 'pool': return filterPool(D.pool_all || [], q);
+    case 'posting': return one('posting', q.id);
+    case 'app': return one('app', q.id);
+    case 'person': return one('person', q.id);
+    case 'report': return one('report', q.date);
+    default: if (name in D) return JSON.parse(JSON.stringify(D[name])); throw new Error('no ' + name);
+  }
+}
+function filterPool(rows, q) {
+  const statuses = STATUS_GROUPS[q.status || 'ready'];
+  const text = String(q.q || '').trim().toLowerCase();
+  const min = q.min === undefined || q.min === '' ? null : +q.min;
+  const counts = {}, trackCounts = {};
+  rows.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+  let out = rows.filter(r => !statuses || statuses.includes(r.status));
+  out = out.filter(r => !text || (String(r.title) + ' ' + r.company + ' ' + (r.location || '')).toLowerCase().includes(text));
+  out = out.filter(r => min === null || (r.score || 0) >= min);
+  out.forEach(r => { const k = r.track || ''; trackCounts[k] = (trackCounts[k] || 0) + 1; });
+  if (q.track) out = out.filter(r => r.track === q.track);
+  const desc = (q.order || 'desc') !== 'asc';
+  const key = {score: r => [r.score || 0, r.posted_at || r.first_seen || ''], posted: r => [r.posted_at || r.first_seen || ''],
+    company: r => [String(r.company || '').toLowerCase()], title: r => [String(r.title || '').toLowerCase()]}[q.sort || 'score'];
+  out.sort((a, b) => { const x = key(a), y = key(b); for (let i = 0; i < x.length; i++) { if (x[i] < y[i]) return desc ? 1 : -1; if (x[i] > y[i]) return desc ? -1 : 1; } return 0; });
+  const offset = +q.offset || 0, limit = +q.limit || 50;
+  return {total: out.length, offset, rows: out.slice(offset, offset + limit), counts, track_counts: trackCounts, group: q.status || 'ready'};
+}
+
+/* ------------------------------------------------------------------ tracks */
+function trackOf(id) { return (S && S.tracks || []).find(x => x.id === id); }
+function trackColor(id) { const tr = trackOf(id); return tr ? 'var(--s' + Math.min(8, tr.slot) + ')' : 'var(--s0)'; }
+function trackName(id) { const tr = trackOf(id); return tr ? tr.name : (id && id !== 'none' ? id : t('none')); }
+const trackDot = id => raw('<i class="dot" data-track="' + esc(id || '') + '"></i>');
+function paintTracks(root) {
+  root.querySelectorAll('[data-track]').forEach(el => {
+    const c = trackColor(el.dataset.track);
+    if (el.classList.contains('dot')) el.style.background = c;
+    else el.style.setProperty('--tc', c);
+  });
+}
+const scoreText = v => (v === null || v === undefined ? '–' : Number.isInteger(v) ? String(v) : Number(v).toFixed(1));
+function ring(score, track, lg) {
+  const r = lg ? 40 : 16, sw = lg ? 7 : 3.5, size = lg ? 92 : 40, c = 2 * Math.PI * r;
+  const v = Math.max(0, Math.min(10, score || 0)) / 10;
+  return h`<span class="ring ${lg ? 'lg' : ''}"><svg viewBox="0 0 ${size} ${size}" aria-hidden="true">
+    <circle class="bg" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke-width="${sw}"/>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke-linecap="round" stroke-width="${sw}"
+      data-ring="${track || ''}" stroke-dasharray="${(c * v).toFixed(2)} ${c.toFixed(2)}"/></svg>
+    <b>${scoreText(score)}${lg ? h`<small>${t('of10')}</small>` : ''}</b></span>`;
+}
+function paintRings(root) { root.querySelectorAll('[data-ring]').forEach(el => { el.style.stroke = trackColor(el.dataset.ring); }); }
+function paint(root) { paintTracks(root); paintRings(root); }
+
+const POSTING_STATUS = {ready: ['ready', 'st_ready', 'spark'], hold: ['saved', 'st_saved', 'bookmark'], applied: ['applied', 'st_applied', 'check'],
+  skipped: ['', 'st_skipped', 'x'], below_threshold: ['', 'st_below', 'down'], excluded: ['', 'st_excluded', 'x'],
+  dropped: ['', 'st_filtered', 'funnel'], pending: ['', 'st_pending', 'clock'], stale: ['', 'st_stale', 'clock']};
+function statusChip(st) {
+  const s = POSTING_STATUS[st] || ['', st, 'tag'];
+  return h`<span class="st ${s[0]}">${icon(s[2], 'icon-sm')}${t(s[1])}</span>`;
+}
+
+/* ------------------------------------------------------------------ toasts, tooltip */
+function toast(msg, bad) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (bad ? ' bad' : '');
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), bad ? 6000 : 3500);
+}
+const tip = $('#tip');
+function showTip(target, ev) {
+  let data; try { data = JSON.parse(target.dataset.tip); } catch (e) { return; }
+  tip.replaceChildren();
+  if (data.title) { const tt = document.createElement('div'); tt.className = 'tt'; tt.textContent = data.title; tip.appendChild(tt); }
+  (data.rows || []).forEach(([label, value, color]) => {
+    const row = document.createElement('div'); row.className = 'tr';
+    const k = document.createElement('span'); k.className = 'k';
+    if (color) { const i = document.createElement('i'); i.style.background = color; k.appendChild(i); }
+    k.appendChild(document.createTextNode(label));
+    const b = document.createElement('b'); b.textContent = value;
+    row.append(k, b); tip.appendChild(row);
+  });
+  tip.hidden = false;
+  const rect = target.getBoundingClientRect();
+  const x = ev && ev.clientX ? ev.clientX : rect.left + rect.width / 2, y = ev && ev.clientY ? ev.clientY : rect.top;
+  const w = tip.offsetWidth, hh = tip.offsetHeight;
+  tip.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x + 14)) + 'px';
+  tip.style.top = Math.max(8, Math.min(window.innerHeight - hh - 8, y - hh - 10)) + 'px';
+}
+document.addEventListener('pointermove', e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) showTip(el, e); else tip.hidden = true; });
+document.addEventListener('focusin', e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) showTip(el); });
+document.addEventListener('focusout', () => { tip.hidden = true; });
+
+/* ------------------------------------------------------------------ charts */
+function chartCard(id, title, sub, chartFrag, tableFrag, legend) {
+  const mode = state.chartMode[id] || 'chart';
+  return h`<div class="card"><div class="card-h"><h2>${title}</h2><span class="sub">${sub}</span>
+    <div class="right"><span class="seg-toggle" role="group">
+      <button data-act="chart-mode" data-id="${id}" data-mode="chart" aria-pressed="${mode === 'chart'}">${t('chart')}</button>
+      <button data-act="chart-mode" data-id="${id}" data-mode="table" aria-pressed="${mode === 'table'}">${t('table')}</button></span></div></div>
+    ${mode === 'chart' ? h`${legend || ''}${chartFrag}` : tableFrag}</div>`;
+}
+function funnelChart(fun) {
+  const stages = [['f_applied', fun.applied], ['f_responded', fun.responded], ['f_oa', fun.oa], ['f_interview', fun.interview], ['f_offer', fun.offer]];
+  const W = 520, labelW = 104, valueW = 74, barH = 20, gap = 14, H = stages.length * (barH + gap) - gap + 4;
+  const max = Math.max(1, fun.applied || 0), plotW = W - labelW - valueW;
+  const bars = stages.map(([key, n], i) => {
+    const y = i * (barH + gap) + 2, w = Math.max(n ? 6 : 0, (n / max) * plotW), prev = i ? stages[i - 1][1] : null;
+    const rate = prev ? Math.round((n / prev) * 100) : null;
+    const tipData = JSON.stringify({title: t(key), rows: [[t('total'), fmtNum(n)]].concat(rate !== null ? [[t('of_prev', {p: rate}), '']] : [])});
+    const path = w >= 8 ? 'M' + labelW + ' ' + y + 'h' + (w - 4) + 'a4 4 0 0 1 4 4v' + (barH - 8) + 'a4 4 0 0 1 -4 4h-' + (w - 4) + 'z'
+      : w > 0 ? 'M' + labelW + ' ' + y + 'h' + w + 'v' + barH + 'h-' + w + 'z' : '';
+    return h`<g class="bar" tabindex="0" data-tip="${tipData}" aria-label="${t(key)}: ${n}">
+      <rect class="hit" x="0" y="${y - gap / 2}" width="${W}" height="${barH + gap}" rx="6"/>
+      <text class="lbl" x="0" y="${y + barH / 2 + 4}">${t(key)}</text>
+      ${path ? h`<path class="fill f${i + 1}" d="${path}"/>` : ''}
+      <text class="val" x="${labelW + w + 8}" y="${y + barH / 2 + 4}">${fmtNum(n)}${rate !== null ? h`<tspan class="soft"> · ${rate}%</tspan>` : ''}</text></g>`;
+  });
+  return h`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('pipeline')}">
+    <line class="base" x1="${labelW}" y1="0" x2="${labelW}" y2="${H}"/>${bars}</svg>`;
+}
+function funnelTable(fun) {
+  const rows = [['f_applied', fun.applied], ['f_responded', fun.responded], ['f_oa', fun.oa], ['f_interview', fun.interview], ['f_offer', fun.offer]];
+  return h`<table class="mini-table"><thead><tr><th>${t('pipeline')}</th><th>${t('total')}</th></tr></thead><tbody>
+    ${rows.map(([k, n]) => h`<tr><td>${t(k)}</td><td>${fmtNum(n)}</td></tr>`)}</tbody></table>`;
+}
+function niceMax(v) { if (v <= 4) return 4; const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v / p; return (m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function dailyChart(sum) {
+  const days = sum.days || [], tracks = S.tracks || [];
+  const totals = days.map((d, i) => tracks.reduce((a, tr) => a + ((sum.series[tr.id] || [])[i] || 0), 0));
+  const W = 520, H = 196, left = 30, bottom = 24, top = 18, plotH = H - bottom - top, plotW = W - left - 4;
+  const ymax = niceMax(Math.max(1, ...totals)), band = plotW / Math.max(1, days.length), bw = Math.min(24, band * 0.5);
+  const ticks = [0, ymax / 2, ymax];
+  const grid = ticks.map(v => { const y = top + plotH - (v / ymax) * plotH; return h`<line class="${v ? 'grid' : 'base'}" x1="${left}" x2="${W}" y1="${y}" y2="${y}"/><text x="${left - 8}" y="${y + 4}" text-anchor="end">${fmtNum(v)}</text>`; });
+  const cols = days.map((d, i) => {
+    const x = left + i * band + (band - bw) / 2;
+    let y = top + plotH;
+    const segs = [];
+    const present = tracks.filter(tr => (sum.series[tr.id] || [])[i]);
+    present.forEach((tr, j) => {
+      const n = sum.series[tr.id][i], hgt = (n / ymax) * plotH;
+      const isTop = j === present.length - 1, gapPx = j ? 2 : 0;
+      const segH = Math.max(1, hgt - gapPx);
+      y -= hgt;
+      const path = isTop && segH >= 5
+        ? 'M' + x + ' ' + (y + segH) + 'v-' + (segH - 4) + 'a4 4 0 0 1 4 -4h' + (bw - 8) + 'a4 4 0 0 1 4 4v' + (segH - 4) + 'z'
+        : 'M' + x + ' ' + y + 'h' + bw + 'v' + segH + 'h-' + bw + 'z';
+      segs.push(h`<path class="seg" d="${path}" data-fill="${tr.id}"/>`);
+    });
+    const tipData = JSON.stringify({title: dateLong(d), rows: tracks.map(tr => [tr.name, fmtNum((sum.series[tr.id] || [])[i] || 0), trackColor(tr.id)]).concat([[t('total'), fmtNum(totals[i])]])});
+    const label = new Date(d + 'T12:00:00').toLocaleDateString(locale(), {weekday: 'short'});
+    return h`<g class="dcol" tabindex="0" data-tip="${tipData}" aria-label="${dateLong(d)}: ${totals[i]}">
+      <rect class="hit" x="${left + i * band}" y="${top - 12}" width="${band}" height="${plotH + 12}" rx="6"/>${segs}
+      ${totals[i] ? h`<text class="val" x="${x + bw / 2}" y="${y - 6}" text-anchor="middle">${totals[i]}</text>` : ''}
+      <text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle" ${d === todayIso() ? raw('class="lbl" font-weight="650"') : ''}>${d === todayIso() ? t('today') : label}</text></g>`;
+  });
+  return h`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('per_day')}">${grid}${cols}</svg>`;
+}
+function dailyTable(sum) {
+  const tracks = S.tracks || [];
+  return h`<table class="mini-table"><thead><tr><th>${t('day')}</th>${tracks.map(tr => h`<th>${tr.name}</th>`)}<th>${t('total')}</th></tr></thead>
+    <tbody>${(sum.days || []).map((d, i) => { const vals = tracks.map(tr => (sum.series[tr.id] || [])[i] || 0); return h`<tr><td>${dateLong(d)}</td>${vals.map(v => h`<td>${v}</td>`)}<td>${vals.reduce((a, b) => a + b, 0)}</td></tr>`; })}</tbody></table>`;
+}
+function legend() { return h`<div class="legend">${(S.tracks || []).map(tr => h`<span><i data-fill="${tr.id}"></i>${tr.name}</span>`)}</div>`; }
+function paintFills(root) { root.querySelectorAll('[data-fill]').forEach(el => { const c = trackColor(el.dataset.fill); if (el.tagName === 'I') el.style.background = c; else el.style.fill = c; }); }
+
+/* ------------------------------------------------------------------ views: today */
+function greeting() { const hr = new Date().getHours(); return t(hr < 12 ? 'greet_m' : hr < 18 ? 'greet_a' : 'greet_e'); }
+function matchRow(r) {
+  const gap = (r.gaps || [])[0];
+  return h`<button class="match" data-act="open-posting" data-id="${r.id}">
+    ${ring(r.score, r.track)}
+    <span class="m-main"><span class="m-title">${r.title}</span>
+      <span class="m-meta">${r.company} · ${shortLoc(r.location)}${r.work_arrangement ? ' · ' + r.work_arrangement : ''} · ${ago(r.posted_at || r.first_seen)}</span>
+      ${r.reason ? h`<span class="m-why">${r.reason}</span>` : ''}</span>
+    <span class="m-side">${gap ? h`<span class="gap-chip" title="${gap}">${gap}</span>` : ''}${r.salary ? h`<span class="muted num" >${r.salary.replace(/^USD /, '$').replace(/ \/ year$/, '')}</span>` : ''}</span>
+  </button>`;
+}
+function emptyState(ic, title, text, extra) { return h`<div class="empty">${icon(ic)}<div class="t">${title}</div><div>${text}</div>${extra || ''}</div>`; }
+function dueItem(kind, at, title, sub, appId, cls) {
+  const d = parseT(at);
+  const mo = d ? d.toLocaleDateString(locale(), {month: 'short'}) : '', dy = d ? d.getDate() : '';
+  return h`<button class="due-item" data-act="open-app" data-id="${appId}">
+    <span class="datebox ${cls || ''}">${d ? h`<span class="mo">${mo}</span><span class="dy">${dy}</span>` : icon('mail')}</span>
+    <span><span class="due-kind">${kind}</span><span class="due-t">${title}</span><span class="due-s">${sub}</span></span></button>`;
+}
+async function renderToday() {
+  const sum = await api('summary');
+  state.cache.summary = sum;
+  const k = sum.kpis, el = $('#view-today');
+  const tracks = sum.by_track || [];
+  const lastRun = sum.last_daily ? t('last_run', {when: ago(sum.last_daily.at)}) : (sum.last_collection ? t('last_run', {when: ago(sum.last_collection.finished_at || sum.last_collection.created_at)}) : t('no_run'));
+  const due = sum.due || {deadlines: [], interviews: [], followups: []};
+  const dueRows = [];
+  (due.interviews || []).filter(i => !i.past).forEach(i => dueRows.push(dueItem(t('due_iv'), i.time, i.company, i.role + ' · ' + timeShort(i.time), i.app_id, 'soon')));
+  (due.deadlines || []).forEach(d => dueRows.push(dueItem(t('due_oa') + (d.overdue ? ' · ' + t('overdue') : ''), d.due, d.company, d.role, d.app_id, d.overdue ? 'over' : 'soon')));
+  (due.followups || []).slice(0, 4).forEach(f => dueRows.push(dueItem(t('due_fu'), null, f.company, t('fu_days', {n: f.days}), f.app_id)));
+  const rep = sum.report;
+  const fun = Object.assign({responded: k.responded}, sum.funnel || {});
+  const anyMatches = tracks.some(tr => (tr.top || []).length);
+  html(el, h`
+  <div class="hero-row">
+    <div class="card hero"><div><div class="eyebrow">${greeting()}${S.first_name ? (LANG === 'zh' ? '，' : ', ') + S.first_name : ''} · ${dateLong(new Date().toISOString())}</div>
+      <div class="big"><b>${fmtNum(k.new_today)}</b><span>${t('hero_label')}</span></div>
+      <div class="hsub">${t('hero_sub', {ready: fmtNum(k.ready), tracks: tracks.length})} · ${lastRun}</div></div>
+      <div class="tracks">${tracks.map(tr => h`<span class="chip">${trackDot(tr.id)}${tr.name}<b class="num">${tr.new_today}</b></span>`)}</div></div>
+    <div class="kpis">
+      <div class="card tile"><span class="label">${t('kpi_ready')}</span><span class="value">${fmtNum(k.ready)}</span><span class="foot">${t('kpi_ready_f')}</span></div>
+      <div class="card tile"><span class="label">${t('kpi_week')}</span><span class="value">${fmtNum(k.applied_week)}</span><span class="foot">${t('kpi_week_f', {n: fmtNum(k.applied_total)})}</span></div>
+      <div class="card tile"><span class="label">${t('kpi_iv')}</span><span class="value">${fmtNum(k.interviews)}</span><span class="foot">${k.upcoming_interviews ? t('kpi_iv_f', {n: k.upcoming_interviews}) : t('kpi_iv_none')}</span></div>
+      <div class="card tile"><span class="label">${t('kpi_resp')}</span><span class="value">${pct(k.response_rate)}</span><span class="foot">${k.applied_total ? t('kpi_resp_f', {n: k.responded, total: k.applied_total}) : t('kpi_resp_none')}</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-h"><h2>${t('top')}</h2><span class="sub">${t('top_sub')}</span>
+      <div class="right"><button class="btn btn-sm btn-ghost" data-act="tab" data-tab="pool">${t('see_all')} →</button></div></div>
+      ${anyMatches ? tracks.filter(tr => (tr.top || []).length).map(tr => h`
+        <div class="track-head">${trackDot(tr.id)}<span class="nm">${tr.name}</span><span class="muted">· ${t('n_ready', {n: tr.ready})}${tr.new_today ? ' · ' + t('n_new', {n: tr.new_today}) : ''}</span></div>
+        <div class="matches">${(tr.top || []).slice(0, 3).map(matchRow)}</div>`) : emptyState('spark', t('empty_matches_t'), t('empty_matches'))}
+    </div>
+    <div class="stack">
+      <div class="card"><div class="card-h"><h2>${t('up_next')}</h2></div>
+        ${dueRows.length ? h`<div class="due">${dueRows}</div>` : emptyState('calendar', t('nothing_due_t'), t('nothing_due'))}</div>
+      ${chartCard('funnel', t('pipeline'), t('pipeline_sub'), funnelChart(fun), funnelTable(fun))}
+      ${chartCard('daily', t('per_day'), t('per_day_sub'), dailyChart(sum), dailyTable(sum), legend())}
+      <div class="card"><div class="card-h"><h2>${t('report')}</h2>${rep ? h`<span class="sub">${dateLong(rep.date)}</span>` : ''}</div>
+        ${rep ? h`<div class="rep-lines">
+          ${(rep.tracks || []).map(tr => h`<div class="rep-line">${trackDot(tr.id)}<span><b>${tr.name}</b> <span class="muted">· ${t('r_new')}</span> ${fmtNum(tr.admitted)} / ${fmtNum(tr.seen)}</span></div>`)}
+          <div class="rep-line"><span class="k">${t('r_queue')}</span><b class="num">${fmtNum(rep.queue)}</b></div>
+          ${sum.budget ? h`<div class="rep-line"><span class="k">${t('r_spend')}</span><span class="num">${money(sum.budget.today)} / ${money(sum.budget.today_cap)} · ${t('budget_month')} ${money(sum.budget.month)}</span></div>` : ''}
+          ${(rep.problems || []).length ? h`<div class="rep-line top"><span class="k">${t('r_problems')}</span><span class="stack">${rep.problems.map(p => h`<span class="problem">${icon('alert', 'icon-sm')}<span>${p}</span></span>`)}</span></div>` : ''}
+        </div>` : emptyState('doc', t('report_none_t'), md(t('report_none')))}</div>
+    </div>
+  </div>`);
+  paint(el); paintFills(el);
+  updateChrome(sum);
+}
+
+/* ------------------------------------------------------------------ views: pool */
+async function renderPool(append) {
+  const q = state.poolq, el = $('#view-pool');
+  const data = await api('pool', {status: q.status, track: q.track, q: q.q, min: q.min || '', sort: q.sort, order: q.order, offset: 0, limit: q.limit});
+  state.cache.pool = data;
+  const counts = data.counts || {}, tc = data.track_counts || {};
+  const groupCount = g => (STATUS_GROUPS[g] ? STATUS_GROUPS[g].reduce((a, s) => a + (counts[s] || 0), 0) : Object.values(counts).reduce((a, b) => a + b, 0));
+  const allInGroup = Object.values(tc).reduce((a, b) => a + b, 0);
+  const statuses = ['ready', 'saved', 'applied', 'skipped', 'below', 'excluded', 'filtered', 'pending', 'admitted', 'all'];
+  const sortBtn = (key, label) => h`<button data-act="sort" data-key="${key}" ${q.sort === key ? raw('aria-sort="' + (q.order === 'asc' ? 'ascending' : 'descending') + '"') : ''}>${label}</button>`;
+  const focused = document.activeElement && document.activeElement.id === 'pool-q';
+  html(el, h`
+  <div class="filters">
+    <label class="search">${icon('search')}<input id="pool-q" type="search" placeholder="${t('search_ph')}" value="${q.q}" autocomplete="off"><kbd>/</kbd></label>
+    <div class="chips">
+      <button class="chipbtn" data-act="pool-track" data-track="" aria-pressed="${!q.track}">${t('all')} <span class="badge">${allInGroup}</span></button>
+      ${(S.tracks || []).map(tr => h`<button class="chipbtn" data-act="pool-track" data-track="${tr.id}" aria-pressed="${q.track === tr.id}">${trackDot(tr.id)}${tr.name}<span class="badge">${tc[tr.id] || 0}</span></button>`)}
+    </div>
+    <select id="pool-status" aria-label="${t('c_status')}">${statuses.map(s => h`<option value="${s}" ${q.status === s ? raw('selected') : ''}>${t('st_' + s)} (${groupCount(s)})</option>`)}</select>
+    <label class="range">${t('min_score')}<input id="pool-min" type="range" min="0" max="10" step="0.5" value="${q.min || 0}"><output>${fmtNum(q.min || 0, 1)}</output></label>
+  </div>
+  <div class="card"><div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>${sortBtn('score', t('c_score'))}</th><th>${sortBtn('title', t('c_role'))}</th><th>${t('c_track')}</th><th>${t('c_loc')}</th><th>${sortBtn('posted', t('c_posted'))}</th><th>${t('c_status')}</th></tr></thead>
+    <tbody>${data.rows.map(r => h`<tr data-act="open-posting" data-id="${r.id}" tabindex="0">
+      <td class="c-score">${r.score !== undefined && r.score !== null ? h`<span class="score-cell">${fmtNum(r.score, 1)}<span class="bar"><i data-w="${r.score * 10}" data-track="${r.track || ''}"></i></span></span>` : h`<span class="muted">–</span>`}</td>
+      <td class="role"><b>${r.title}</b><span>${r.company}${r.salary ? ' · ' + r.salary.replace(/^USD /, '$').replace(/ \/ year$/, '') : ''}</span></td>
+      <td class="c-track">${r.track && r.track !== 'none' ? h`<span class="chip">${trackDot(r.track)}${trackName(r.track)}</span>` : h`<span class="muted">–</span>`}</td>
+      <td class="c-loc muted">${shortLoc(r.location)}</td>
+      <td class="c-posted muted num">${ago(r.posted_at || r.first_seen)}</td>
+      <td>${statusChip(r.status)}</td></tr>`)}</tbody></table></div>
+    ${data.rows.length ? h`<div class="table-foot">${t('showing', {n: data.rows.length, total: data.total})}${data.rows.length < data.total ? h`<button class="btn btn-sm" data-act="pool-more">${t('more')}</button>` : ''}</div>`
+      : emptyState('search', t('empty_pool_t'), t('empty_pool'))}
+  </div>`);
+  el.querySelectorAll('.score-cell .bar i').forEach(i => { i.style.background = trackColor(i.dataset.track); });
+  paint(el);
+  const input = $('#pool-q');
+  if (focused) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+}
+
+/* ------------------------------------------------------------------ views: applications */
+const COLS = [['saved', 'b_saved'], ['applied', 'b_applied'], ['assessment', 'b_assessment'], ['interview', 'b_interview'], ['offer', 'b_offer'], ['closed', 'b_closed']];
+function nextBadge(a) {
+  const n = a.next;
+  if (!n) return '';
+  if (n.kind === 'oa') return h`<span class="next warn">${icon('clock', 'icon-sm')}${t('next_oa', {when: dateShort(n.at)})}</span>`;
+  if (n.kind === 'interview') return h`<span class="next">${icon('calendar', 'icon-sm')}${t('next_iv', {when: dateTime(n.at)})}</span>`;
+  if (n.kind === 'followup') return h`<span class="next warn">${icon('mail', 'icon-sm')}${t('next_fu', {n: n.days})}</span>`;
+  return '';
+}
+async function renderApps() {
+  const data = await api('apps');
+  state.cache.apps = data;
+  const el = $('#view-apps');
+  const by = {}; COLS.forEach(([c]) => { by[c] = []; });
+  (data.apps || []).forEach(a => { (by[a.column] || by.saved).push(a); });
+  const f = data.funnel || {}, inbox = data.inbox || {};
+  const responded = (data.apps || []).filter(a => a.applied && a.responded).length;
+  const chips = [['f_applied', f.applied], ['f_responded', responded], ['f_oa', f.oa], ['f_interview', f.interview], ['f_offer', f.offer]];
+  const ist = inbox.status;
+  html(el, h`
+  <div class="card"><div class="card-h"><h2>${t('pipeline')}</h2>
+    <span class="sub">${ist && ist.last_scan ? t('inbox_last', {when: ago(ist.last_scan)}) : t('inbox_never')}${(inbox.unmatched || []).length ? ' · ' + t('inbox_unmatched', {n: inbox.unmatched.length}) : ''}</span>
+    <div class="right"><button class="btn btn-sm" data-act="add-app">+ ${t('add_app')}</button></div></div>
+    <div class="funnel-chips">${chips.map(([k, n], i) => h`${i ? h`<span class="arrow">→</span>` : ''}<div class="fchip"><b>${fmtNum(n || 0)}</b><span>${t(k)}</span></div>`)}</div>
+    <div id="add-app-form" hidden></div></div>
+  <div class="board">${COLS.map(([c, label]) => h`<div class="col"><div class="col-h">${t(label)}<span class="badge">${by[c].length}</span></div>
+    ${by[c].length ? by[c].map(a => h`<button class="kcard" data-act="open-app" data-id="${a.id}">
+      <span class="co">${trackDot(a.track)}<span>${a.company}</span></span><span class="ro">${a.role}</span>
+      <span class="meta">${c === 'closed' ? h`<span>${t('stage_' + a.stage)}</span>` : ''}<span class="num">${dateShort(a.applied_date || a.created)}</span>
+        ${a.referrer ? h`<span class="next good">${icon('star', 'icon-sm')}${t('referred_by', {who: a.referrer})}</span>` : ''}${nextBadge(a)}</span></button>`)
+      : h`<div class="empty">${t('empty_col')}</div>`}</div>`)}</div>`);
+  paint(el);
+}
+function addAppForm() {
+  const box = $('#add-app-form');
+  if (!box) return;
+  box.hidden = !box.hidden;
+  if (box.hidden) return;
+  html(box, h`<div class="inline-form">
+    <div class="form-row"><input class="input" id="na-company" placeholder="${t('company')}"><input class="input" id="na-role" placeholder="${t('role')}"></div>
+    <div class="form-row"><input class="input" id="na-url" placeholder="${t('link')}"><label class="range"><input type="checkbox" id="na-applied" checked> ${t('already')}</label>
+      <button class="btn btn-primary btn-sm" data-act="add-app-save">${t('save')}</button></div></div>`);
+  $('#na-company').focus();
+}
+
+/* ------------------------------------------------------------------ views: referrals */
+async function renderRefs() {
+  const data = await api('referrals');
+  state.cache.refs = data;
+  const el = $('#view-refs');
+  const companies = (data.companies || []).filter(c => !c.removed);
+  const stats = data.stats || {};
+  if (!state.refsCompany && companies.length) state.refsCompany = companies[0].key;
+  const cur = companies.find(c => c.key === state.refsCompany);
+  const people = (data.people || []).filter(p => p.company_key === state.refsCompany);
+  const order = {kept: 0, recruiter: 1, skip: 2};
+  people.sort((a, b) => (order[a.triage] ?? 3) - (order[b.triage] ?? 3) || (b.score || 0) - (a.score || 0));
+  const findForm = h`<div class="inline-form"><div class="form-row"><input class="input" id="nf-company" placeholder="${t('company_ph')}"></div>
+    <div class="form-row"><input class="input" id="nf-url" placeholder="${t('url_ph')}"><button class="btn btn-primary btn-sm" data-act="net-find">${t('find')}</button></div></div>`;
+  html(el, h`
+  <div class="refs">
+    <div class="card"><div class="card-h"><h2>${t('companies')}</h2></div>
+      ${companies.length ? companies.map(c => { const s = stats[c.key] || {}; return h`<button class="co-item" data-act="pick-company" data-key="${c.key}" aria-current="${c.key === state.refsCompany}">
+        <span class="avatar">${initials(c.name)}</span><span><span class="nm">${c.name}</span>
+        <span class="ct">${t('people_n', {n: s.people || 0})} · ${t('kept_n', {n: s.kept || 0})} · ${t('contacted_n', {n: s.contacted || 0})}</span></span></button>`; })
+      : emptyState('people', t('refs_empty_t'), t('refs_empty'))}
+      ${findForm}
+    </div>
+    <div class="stack">
+      ${cur ? h`<div class="card"><div class="card-h"><h2>${cur.name}</h2><span class="sub">${t('people_n', {n: (stats[cur.key] || {}).people || 0})} · ${t('cards_n', {n: (stats[cur.key] || {}).cards || 0})}</span>
+        <div class="right"><button class="btn btn-sm" data-act="net-cards" data-company="${cur.name}">${t('write_cards')}</button></div></div>
+        <div class="muted">${t('refs_note')}</div></div>
+      <div class="people">${people.map(p => h`<button class="pcard ${p.triage === 'skip' ? 'dim' : ''}" data-act="open-person" data-id="${p.pid}">
+        <span class="p-top"><span class="avatar">${initials(p.name)}</span><span><span class="nm">${p.name}</span><span class="tt">${p.title || p.headline}</span></span></span>
+        <span class="p-why">${p.triage === 'skip' ? p.triage_reason : (p.why || '')}</span>
+        <span class="p-foot">${(p.schools || []).slice(0, 1).map(s => h`<span class="chip">${s}</span>`)}
+          ${p.triage === 'recruiter' ? h`<span class="chip out">${t('recruiter_b')}</span>` : ''}${p.triage === 'skip' ? h`<span class="chip out">${t('skipped_b')}</span>` : ''}
+          ${p.triage !== 'skip' ? h`<span class="st ${['referred', 'replied', 'chat_scheduled', 'chat_done'].includes(p.stage) ? 'applied' : p.stage === 'card_ready' ? 'ready' : ''}">${t('ps_' + (p.stage || 'new'))}</span>` : ''}</span>
+        ${p.score !== null && p.score !== undefined ? h`<span class="pscore">${p.score}<span class="meter"><i data-w="${p.score}"></i></span></span>` : ''}
+      </button>`)}</div>` : h`<div class="card">${emptyState('people', t('pick_company'), t('refs_note'))}</div>`}
+    </div>
+  </div>`);
+}
+
+/* ------------------------------------------------------------------ views: search */
+function meterCard(title, spent, cap, foot) {
+  const ratio = cap > 0 ? spent / cap : 0;
+  const cls = ratio >= 1 ? 'bad' : ratio >= 0.8 ? 'warn' : '';
+  return h`<div class="card meter-card"><h3>${title}</h3>
+    <div class="big num">${money(spent)}<small>/ ${money(cap)}</small></div>
+    <div class="meter track ${cls}"><i data-w="${ratio * 100}"></i></div>
+    <div class="meta">${cls ? h`${icon('alert', 'icon-sm')}<b>${t(ratio >= 1 ? 'at_cap' : 'near_cap')}</b> · ` : ''}${foot}</div></div>`;
+}
+async function renderSearch() {
+  const [plan, filtered] = await Promise.all([api('plan'), api('filtered', {days: 14})]);
+  state.cache.plan = plan;
+  const el = $('#view-search');
+  const b = plan.budget || {}, sch = plan.schedule;
+  const kinds = [['', 'all'], ['filter', 'k_filter'], ['excluded', 'k_excluded'], ['below', 'k_below']];
+  const rows = (filtered.rows || []).filter(r => !state.filteredKind || r.kind === state.filteredKind);
+  const sum = state.cache.summary;
+  html(el, h`
+  <div class="grid-3">
+    ${meterCard(t('budget_today'), b.today || 0, b.today_cap || 0, t('left', {v: money(b.available || 0)}))}
+    ${meterCard(t('budget_month'), b.month || 0, b.monthly_budget || 0, t('left', {v: money(Math.max(0, (b.monthly_budget || 0) - (b.month || 0)))}))}
+    <div class="card meter-card"><h3>${t('schedule')}</h3>
+      <div class="big">${sch && sch.installed ? t('sched_on', {time: sch.time}) : t('sched_off')}</div>
+      <div class="meta">${sch && sch.installed ? (sum && sum.last_daily ? t('last_daily', {when: ago(sum.last_daily.at)}) : '') : t('sched_hint')}</div>
+      <div class="form-row" style-hook><button class="btn btn-primary btn-sm" data-act="run-daily">${icon('play', 'icon-sm')}${t('run_now')}</button></div></div>
+  </div>
+  <div class="card"><div class="card-h"><h2>${t('groups')}</h2><span class="sub">${t('groups_sub')}</span></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t('g_group')}</th><th>${t('c_track')}</th><th>${t('g_budget')}</th><th>${t('g_last')}</th><th>${t('g_week')}</th><th>${t('g_admit')}</th></tr></thead>
+    <tbody>${(plan.groups || []).map(g => h`<tr class="static-row">
+      <td class="role"><b>${g.name}</b><span>${(g.titles || []).join(' · ')}${g.title_count > (g.titles || []).length ? ' +' + (g.title_count - g.titles.length) : ''}</span></td>
+      <td><span class="chip">${trackDot(g.track)}${trackName(g.track)}</span></td>
+      <td class="num nw">${money(g.budget)}</td>
+      <td class="num nw">${g.last ? h`${t('rows_new', {rows: g.last.rows || 0, new: g.last.new || 0})}${g.last.truncated ? h` <span class="st warn" title="${g.last.truncated}">${icon('alert', 'icon-sm')}${t('capped_b')}</span>` : ''}` : t('none')}</td>
+      <td class="num nw">${t('rows_new', {rows: g.week.rows, new: g.week.new})} · ${money(g.week.cost)}</td>
+      <td class="num nw">${g.admitted_share === null || g.admitted_share === undefined ? t('none') : pct(g.admitted_share)} <span class="muted">(${g.admitted}/${g.judged})</span></td></tr>`)}</tbody></table></div></div>
+  <div class="grid-2e">
+    <div class="card"><div class="card-h"><h2>${t('runs')}</h2></div><div class="runs">
+      ${(plan.manifests || []).slice(0, 10).map(m => h`<div class="run"><span class="d">${dateLong(m.id.slice(0, 10))}</span>
+        <span class="muted">${t('run_line', {rows: m.rows, new: m.new})}${m.complete ? '' : ' · ' + t('incomplete')}</span><span class="num">${money(m.cost)}</span></div>`)}
+      ${(plan.manifests || []).length ? '' : emptyState('search', t('no_run'), t('sched_hint'))}</div></div>
+    <div class="card"><div class="card-h"><h2>${t('filtered')}</h2><span class="sub">${t('filtered_sub')}</span></div>
+      <div class="chips" style-hook>${kinds.map(([k, label]) => h`<button class="chipbtn" data-act="filtered-kind" data-kind="${k}" aria-pressed="${state.filteredKind === k}">${t(label)}<span class="badge">${k ? (filtered.counts || {})[k] || 0 : (filtered.rows || []).length}</span></button>`)}</div>
+      <div class="flist">${rows.map(r => h`<div class="fitem"><span><span class="k">${t(r.kind === 'filter' ? 'k_filter' : r.kind === 'below' ? 'k_below' : 'k_excluded')}${r.score !== undefined && r.score !== null ? ' · ' + fmtNum(r.score, 1) : ''}</span>
+        <span class="t" data-act="open-posting" data-id="${r.id}">${r.title} · ${r.company}</span><span class="w">${r.why}</span></span>
+        ${r.kind !== 'filter' ? h`<button class="btn btn-sm" data-act="mark" data-id="${r.id}" data-status="ready">${t('restore')}</button>` : ''}</div>`)}</div></div>
+  </div>`);
+  el.querySelectorAll('[style-hook]').forEach(x => { x.removeAttribute('style-hook'); x.style.marginTop = '12px'; });
+  paint(el);
+}
+
+/* ------------------------------------------------------------------ views: activity */
+async function renderActivity() {
+  const evs = await api('events', {n: 300});
+  const el = $('#view-activity');
+  let last = '';
+  const items = [];
+  evs.forEach(e => {
+    const dk = dayKey(e.ts);
+    if (dk !== last) { items.push(h`<div class="day">${dk === todayIso() ? t('today') : dateLong(e.ts)}</div>`); last = dk; }
+    items.push(h`<div class="ev"><span class="tm">${timeShort(e.ts)}</span><span class="ic">${icon(KIND_ICON[e.kind] || 'tag')}</span>
+      <span class="tx">${cap1(e.text)}<span class="kd">${t('kind_' + e.kind)}</span></span></div>`);
+  });
+  html(el, h`<div class="card"><div class="card-h"><h2>${t('activity')}</h2></div>
+    ${items.length ? h`<div class="feed">${items}</div>` : emptyState('clock', t('empty_act_t'), t('empty_act'))}</div>`);
+}
+
+/* ------------------------------------------------------------------ drawer */
+function openDrawer(frag, kind, id) {
+  const d = $('#drawer');
+  html(d, frag);
+  paint(d); paintFills(d);
+  d.hidden = false; $('#scrim').hidden = false;
+  state.drawer = {kind, id};
+  document.body.style.overflow = 'hidden';
+  setHash();
+}
+function closeDrawer() {
+  $('#drawer').hidden = true; $('#scrim').hidden = true; state.drawer = null; document.body.style.overflow = ''; setHash();
+}
+function quotes(list, src) { return (list || []).map(q => h`<div class="quote"><span class="src ${src === 'you' ? 'you' : ''}">${t(src === 'you' ? 'src_you' : 'src_jd')}</span><q>${q}</q></div>`); }
+async function openPosting(id) {
+  const p = await api('posting', {id});
+  const comps = p.components || {}, max = {duties_4: 4, background_3: 3, skills_2: 2, seniority_1: 1};
+  const reviewed = p.stage === 'reviewed' && p.score !== undefined && p.score !== null;
+  const actions = [];
+  if (p.status !== 'applied') {
+    actions.push(h`<button class="btn btn-primary" data-act="tailor" data-id="${p.id}">${icon('doc', 'icon-sm')}${t('a_tailor')}</button>`);
+    if (p.status !== 'hold') actions.push(h`<button class="btn" data-act="save-app" data-id="${p.id}">${icon('bookmark', 'icon-sm')}${t('a_save')}</button>`);
+    actions.push(h`<button class="btn" data-act="applied-form" data-id="${p.id}">${icon('check', 'icon-sm')}${t('a_applied')}</button>`);
+  }
+  const right = [];
+  if (['ready', 'hold'].includes(p.status)) right.push(h`<button class="btn btn-ghost" data-act="mark" data-id="${p.id}" data-status="skipped">${t('a_skip')}</button>`);
+  if (p.status === 'ready') right.push(h`<button class="btn btn-ghost" data-act="mark" data-id="${p.id}" data-status="hold">${t('a_hold')}</button>`);
+  if (['skipped', 'hold', 'below_threshold', 'excluded'].includes(p.status)) right.push(h`<button class="btn btn-ghost" data-act="mark" data-id="${p.id}" data-status="ready">${t('a_ready')}</button>`);
+  const app = p.application;
+  openDrawer(h`
+  <div class="d-head"><div class="d-top">${p.track && p.track !== 'none' ? h`<span class="chip">${trackDot(p.track)}${trackName(p.track)}</span>` : ''}${statusChip(p.status)}
+    <div class="right"><button class="btn btn-ghost btn-icon" data-act="close" aria-label="Close">${icon('close')}</button></div></div>
+    <h2 class="d-title">${p.title}</h2>
+    <div class="d-sub"><span>${p.company}</span><span>${shortLoc(p.location)}</span>${p.work_arrangement ? h`<span>${p.work_arrangement}</span>` : ''}<span>${ago(p.posted_at || p.first_seen)}</span>${p.salary ? h`<span class="num">${p.salary}</span>` : ''}</div>
+    <div class="d-links">${safeUrl(p.url) ? h`<a href="${safeUrl(p.url)}" target="_blank" rel="noopener noreferrer">${t('open_posting')} ${icon('ext', 'icon-sm')}</a>` : ''}
+      ${safeUrl(p.apply_url) && p.apply_url !== p.url ? h`<a href="${safeUrl(p.apply_url)}" target="_blank" rel="noopener noreferrer">${t('apply_page')} ${icon('ext', 'icon-sm')}</a>` : ''}</div></div>
+  <div class="d-body">
+    ${reviewed && p.components ? h`<section class="sec"><div class="score-top">${ring(p.score, p.track, true)}<div class="info">
+        <span class="muted">${t('fit')}</span><span class="cat">${cap1(String(p.category || '').replace(/_/g, ' '))}</span>
+        ${p.cap ? h`<span class="cap">${icon('alert', 'icon-sm')}<span>${t('capped', {cap: p.cap})}: ${p.cap_reason || ''}</span></span>` : ''}</div></div>
+      <div class="comps">${Object.keys(max).map(k => h`<div class="comp"><div class="comp-h"><span class="nm">${t(k)}</span>
+        <span class="meter"><i data-w="${(comps[k] || 0) / max[k] * 100}" data-track="${p.track}"></i></span><span class="v">${fmtNum(comps[k] || 0, 1)}<small>/${max[k]}</small></span></div>
+        ${(p.reasons || {})[k] ? h`<div class="why">${p.reasons[k]}</div>` : ''}
+        ${quotes((p.jd_quotes || {})[k], 'jd')}${quotes((p.profile_quotes || {})[k], 'you')}</div>`)}</div></section>
+      <section class="sec"><h3>${t('gaps')}</h3>${(p.gaps || []).length ? h`<div class="chips">${p.gaps.map(g => h`<span class="gap-chip">${g}</span>`)}</div>` : h`<div class="muted">${t('no_gaps')}</div>`}</section>` : ''}
+    ${p.reason ? h`<section class="sec"><h3>${p.status === 'excluded' ? t('filtered_why') : t('why_track')}</h3><div>${p.reason}</div>${quotes(p.evidence, 'jd')}
+      ${(p.flags || []).length ? h`<div class="muted" style-hook>${t('eligibility')}: ${p.flags.join(', ')}</div>` : ''}</section>` : ''}
+    ${p.triage ? h`<section class="sec"><h3>${t('filtered_why')}</h3><div>${t('k_filter')} · ${p.triage.rule}: ${p.triage.detail}</div></section>` : ''}
+    ${app ? h`<section class="sec"><h3>${t('application')}</h3><div class="file"><span class="nm">${app.id} · ${t('stage_' + app.stage)}</span>${nextBadge(app)}
+      <button class="btn btn-sm" data-act="open-app" data-id="${app.id}">${t('open')}</button></div></section>` : ''}
+    ${(p.tailored || []).length ? h`<section class="sec"><h3>${t('tailored')}</h3>${p.tailored.map(tailoredFile)}</section>` : ''}
+    ${p.referrals ? h`<section class="sec"><div class="file"><span class="nm">${icon('people', 'icon-sm')} ${t('refs_here', {n: p.referrals})}</span>
+      <button class="btn btn-sm" data-act="goto-refs" data-company="${p.company}">${t('view')}</button></div></section>` : ''}
+    ${p.recruiter && p.recruiter.name ? h`<section class="sec"><h3>${t('recruiter')}</h3><div>${p.recruiter.name}${p.recruiter.title ? ' · ' + p.recruiter.title : ''}</div></section>` : ''}
+    <section class="sec"><details><summary>${t('jd_text')}</summary><div class="jd">${p.jd || ''}</div></details></section>
+    <div id="applied-form" hidden></div>
+  </div>
+  ${actions.length || right.length ? h`<div class="d-foot">${actions}<div class="right">${right}</div></div>` : ''}`, 'posting', id);
+  const d = $('#drawer');
+  d.querySelectorAll('.comp .meter i').forEach(i => { i.style.background = trackColor(i.dataset.track); });
+  d.querySelectorAll('[style-hook]').forEach(x => { x.removeAttribute('style-hook'); x.style.marginTop = '8px'; });
+}
+function tailoredFile(f) {
+  const lint = f.lint || {}, errs = (lint.errors || []).length, warns = (lint.warnings || []).length;
+  const files = f.files || {};
+  const links = Object.entries(files).filter(([, v]) => v).map(([k, v]) => h`<a class="btn btn-sm" href="${STATIC ? '#' : '/files?path=' + encodeURIComponent(v)}" ${STATIC ? raw('data-act="static-file"') : raw('target="_blank" rel="noopener"')}>${k.toUpperCase()}</a>`);
+  return h`<div class="file">${icon('doc')}<span class="nm">${f.company || ''} — ${f.role || ''}<span class="muted"> · ${dateShort(f.created_at)}</span></span>
+    <span class="st ${errs ? 'bad' : warns ? 'warn' : 'applied'}">${errs ? t('lint_err', {n: errs}) : warns ? t('lint_warn', {n: warns}) : t('lint_ok')}</span>
+    ${links.length ? links : h`<span class="muted">${t('no_files')}</span>`}</div>`;
+}
+function appliedForm(id) {
+  const box = $('#applied-form'); if (!box) return;
+  box.hidden = false;
+  html(box, h`<div class="inline-form"><label>${t('applied_on')}<input class="input" type="date" id="af-date" value="${todayIso()}"></label>
+    <div class="form-row"><button class="btn btn-primary btn-sm" data-act="applied-save" data-id="${id}">${t('confirm')}</button>
+    <button class="btn btn-sm btn-ghost" data-act="applied-cancel">${t('cancel')}</button></div></div>`);
+  box.scrollIntoView({block: 'nearest'});
+}
+const STEPS = ['planned', 'applied', 'oa', 'interview', 'offer'];
+function eventButtons(a) {
+  const by = {planned: ['applied', 'withdrawn', 'void'], applied: ['oa_invited', 'interview_invited', 'recruiter_reply', 'followup_sent', 'rejected', 'closed', 'withdrawn', 'void'],
+    oa: ['oa_done', 'interview_invited', 'rejected', 'withdrawn'], interview: ['interview_scheduled', 'interview_done', 'offer', 'rejected', 'withdrawn'],
+    offer: ['withdrawn'], rejected: ['reopened'], withdrawn: ['reopened'], closed: ['reopened']}[a.stage] || [];
+  return by.concat(['note']);
+}
+async function openApp(id) {
+  const a = await api('app', {id});
+  const cur = STEPS.indexOf(a.stage), closed = a.closed;
+  const tl = (a.timeline || []).slice().sort((x, y) => String(y.date || y.ts).localeCompare(String(x.date || x.ts)) || String(y.ts).localeCompare(String(x.ts)));
+  const key = ['applied', 'oa_invited', 'interview_invited', 'interview_scheduled', 'offer', 'rejected'];
+  openDrawer(h`
+  <div class="d-head"><div class="d-top">${trackDot(a.track)}<span class="chip">${a.id}</span><span class="st ${a.stage === 'offer' ? 'applied' : closed ? '' : 'ready'}">${t('stage_' + a.stage)}</span>
+    <div class="right"><button class="btn btn-ghost btn-icon" data-act="close" aria-label="Close">${icon('close')}</button></div></div>
+    <h2 class="d-title">${a.company}</h2><div class="d-sub"><span>${a.role}</span>${a.location ? h`<span>${shortLoc(a.location)}</span>` : ''}${a.referrer ? h`<span>${t('referred_by', {who: a.referrer})}</span>` : ''}</div>
+    <div class="d-links">${safeUrl(a.url) ? h`<a href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer">${t('apply_page')} ${icon('ext', 'icon-sm')}</a>` : ''}
+      ${a.posting ? h`<a href="#" data-act="open-posting" data-id="${a.posting.id}">${t('open_posting')}</a>` : ''}</div></div>
+  <div class="d-body">
+    <section class="sec"><div class="stepper">${STEPS.map((s, i) => h`<div class="step ${closed && i > cur ? 'closed' : i < cur ? 'done' : i === cur ? 'cur' : ''}"><i></i>${t('stage_' + s)}</div>`)}</div>
+      ${a.next ? h`<div style-hook>${nextBadge(a)}</div>` : ''}</section>
+    <section class="sec"><div class="acts">${eventButtons(a).map(ev => h`<button class="btn btn-sm ${['rejected', 'withdrawn', 'void', 'closed'].includes(ev) ? 'btn-ghost' : ''}" data-act="ev-form" data-ev="${ev}" data-id="${a.id}">${t('e_' + ev)}</button>`)}</div>
+      <div id="ev-form" hidden></div></section>
+    ${(a.tailored || []).length ? h`<section class="sec"><h3>${t('tailored')}</h3>${a.tailored.map(tailoredFile)}</section>` : ''}
+    <section class="sec"><h3>${t('timeline')}</h3><div class="tl">${tl.map(e => h`<div class="tl-i ${key.includes(e.event) ? 'key' : ''}"><span class="d">${dateShort(e.date || e.ts)}</span><i class="m"></i>
+      <span><b>${t('ev_' + e.event)}</b>${e.deadline ? ' · ' + t('f_deadline') + ' ' + dateShort(e.deadline) : ''}${e.time ? ' · ' + dateTime(e.time) : ''}${e.note ? h`<span class="n">${e.note}</span>` : ''}</span></div>`)}</div></section>
+  </div>`, 'app', id);
+  $('#drawer').querySelectorAll('[style-hook]').forEach(x => { x.removeAttribute('style-hook'); x.style.marginTop = '12px'; });
+}
+function evForm(ev, id) {
+  const box = $('#ev-form'); if (!box) return;
+  const needsDeadline = ev === 'oa_invited', needsTime = ev === 'interview_scheduled' || ev === 'interview_invited';
+  box.hidden = false;
+  html(box, h`<div class="inline-form"><b>${t('e_' + ev)}</b>
+    ${ev !== 'note' ? h`<label>${t('f_date')}<input class="input" type="date" id="ef-date" value="${todayIso()}"></label>` : ''}
+    ${needsDeadline ? h`<label>${t('f_deadline')}<input class="input" type="date" id="ef-deadline"></label>` : ''}
+    ${needsTime ? h`<label>${t('f_time')}<input class="input" type="datetime-local" id="ef-time"></label>` : ''}
+    <label>${t('f_note')}<textarea class="input" id="ef-note" rows="2"></textarea></label>
+    <div class="form-row"><button class="btn btn-primary btn-sm" data-act="ev-save" data-ev="${ev}" data-id="${id}">${t('save')}</button>
+      <button class="btn btn-sm btn-ghost" data-act="ev-cancel">${t('cancel')}</button></div></div>`);
+  box.scrollIntoView({block: 'nearest'});
+}
+async function openPerson(pid) {
+  const p = await api('person', {id: pid});
+  const c = p.card;
+  const lim = (S.referrals || {}).note_limit || 200, mlim = (S.referrals || {}).message_limit || 700;
+  const subs = ['role', 'alumni', 'path', 'reply', 'help'];
+  const block = (key, text, max) => text ? h`<div class="note-head"><h3>${t(key)}</h3><div class="right">${max ? h`<span class="count ${text.length > max ? 'over' : ''}">${t('chars', {n: text.length, max})}</span>` : ''}
+    <button class="btn btn-sm" data-act="copy" data-text="${text}">${icon('copy', 'icon-sm')}${t('copy')}</button></div></div><div class="note-box">${text}</div>` : '';
+  const NEXT = {new: ['connect_sent', 'dropped'], card_ready: ['connect_sent', 'dropped'], connect_sent: ['accepted', 'no_response', 'dropped'],
+    accepted: ['message_sent', 'replied', 'dropped'], messaged: ['replied', 'no_response'], replied: ['chat_scheduled', 'referred', 'declined'],
+    chat_scheduled: ['chat_done', 'referred'], chat_done: ['referred', 'declined', 'no_response']};
+  const marks = (NEXT[p.stage || 'new'] || []).concat((p.history || []).length ? ['undo'] : []);
+  openDrawer(h`
+  <div class="d-head"><div class="d-top"><span class="st ${['referred', 'replied', 'chat_scheduled', 'chat_done'].includes(p.stage) ? 'applied' : 'ready'}">${t('ps_' + (p.stage || 'new'))}</span>
+    ${p.triage === 'recruiter' ? h`<span class="chip out">${t('recruiter_b')}</span>` : ''}
+    <div class="right"><button class="btn btn-ghost btn-icon" data-act="close" aria-label="Close">${icon('close')}</button></div></div>
+    <div class="p-top"><span class="avatar">${initials(p.name)}</span><span><h2 class="d-title">${p.name}</h2><span class="tt">${p.title || p.headline} · ${p.company}</span></span></div>
+    <div class="d-links">${safeUrl(p.linkedin_url) ? h`<a href="${safeUrl(p.linkedin_url)}" target="_blank" rel="noopener noreferrer">${t('open_li')} ${icon('ext', 'icon-sm')}</a>` : h`<span class="muted">${t('link_hidden')}</span>`}</div></div>
+  <div class="d-body">
+    ${p.why ? h`<section class="sec"><h3>${t('p_why')}</h3><div>${p.why}</div></section>` : ''}
+    ${p.sub ? h`<section class="sec"><h3>${t('p_scores')} · ${p.score}/100</h3>${subs.map(k => h`<div class="comp"><div class="comp-h"><span class="nm">${t(k + '_s')}</span>
+      <span class="meter"><i data-w="${(p.sub[k] || 0) * 20}"></i></span><span class="v">${p.sub[k] || 0}<small>/5</small></span></div>
+      ${(p.evidence || {})[k] ? h`<div class="quote"><span class="src">${t('profile')}</span><q>${p.evidence[k]}</q></div>` : ''}</div>`)}</section>` : ''}
+    <section class="sec">${c ? h`${block('card_note', c.note, lim)}${block('card_alumni', c.note_alumni, lim)}${block('card_message', c.message, mlim)}${block('card_followup', c.followup, 0)}
+      ${(c.questions || []).length ? h`<div class="note-head"><h3>${t('card_questions')}</h3><div class="right"><button class="btn btn-sm" data-act="copy" data-text="${c.questions.join('\n')}">${icon('copy', 'icon-sm')}${t('copy')}</button></div></div>
+        <ol class="qs">${c.questions.map(q => h`<li>${q}</li>`)}</ol>` : ''}
+      ${(c.hooks || []).length ? h`<div class="note-head"><h3>${t('hooks')}</h3></div><div class="chips">${c.hooks.map(x => h`<span class="chip">${x}</span>`)}</div>` : ''}
+      ${(c.avoid || []).length ? h`<div class="note-head"><h3>${t('avoid')}</h3></div><div class="chips">${c.avoid.map(x => h`<span class="gap-chip">${x}</span>`)}</div>` : ''}`
+      : h`<div class="muted">${t('no_card')}</div>`}</section>
+    <section class="sec"><h3>${t('profile')}</h3><div class="kv">
+      ${(p.education || []).map(e => h`<span class="k">${t('education')}</span><span>${e.school} · ${e.degree} ${e.field} · ${e.start}–${e.end}</span>`)}
+      ${(p.experience || []).slice(0, 4).map(x => h`<span class="k">${t('experience')}</span><span>${x.title} @ ${x.company} · ${x.start}–${x.end}</span>`)}</div></section>
+    ${(p.history || []).length ? h`<section class="sec"><h3>${t('history')}</h3><div class="tl">${p.history.slice().reverse().map(x => h`<div class="tl-i"><span class="d">${dateShort(x.at)}</span><i class="m"></i><span>${t('m_' + x.event)}${x.note ? h`<span class="n">${x.note}</span>` : ''}</span></div>`)}</div></section>` : ''}
+  </div>
+  ${p.triage !== 'skip' && marks.length ? h`<div class="d-foot"><div class="acts">${marks.map(m => h`<button class="btn btn-sm ${m === 'referred' ? 'btn-primary' : ['declined', 'no_response', 'dropped', 'undo'].includes(m) ? 'btn-ghost' : ''}" data-act="net-mark" data-pid="${p.pid}" data-ev="${m}">${t('m_' + m)}</button>`)}</div></div>` : ''}`, 'person', pid);
+}
+
+/* ------------------------------------------------------------------ actions */
+async function refresh(force) {
+  if (state.fetching && !force) return;
+  state.fetching = true;
+  try {
+    if (!STATIC) { state.tasks = await api('tasks', {n: 20}).catch(() => state.tasks); }
+    const fn = {today: renderToday, pool: renderPool, apps: renderApps, refs: renderRefs, search: renderSearch, activity: renderActivity}[state.tab];
+    if (state.tab !== 'today' && !state.cache.summary) { state.cache.summary = await api('summary'); }
+    if (state.tab !== 'today') updateChrome(state.cache.summary);
+    await fn();
+    state.lastFetch = Date.now();
+  } catch (e) {
+    if (String(e.message) !== 'sign in') toast(t('err', {msg: e.message}), true);
+  } finally { state.fetching = false; }
+}
+function setTab(tab, noHash) {
+  state.tab = tab;
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== 'view-' + tab; });
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  if (!noHash) setHash();
+  refresh(true);
+}
+function setHash() {
+  const p = new URLSearchParams();
+  p.set('tab', state.tab);
+  if (state.drawer) p.set('open', state.drawer.kind + ':' + state.drawer.id);
+  const next = '#' + p.toString();
+  if (location.hash !== next) history.replaceState(null, '', next);
+}
+async function act(el, ev) {
+  const a = el.dataset.act, id = el.dataset.id;
+  switch (a) {
+    case 'tab': return setTab(el.dataset.tab);
+    case 'open-posting': ev.preventDefault(); return openPosting(id).catch(e => toast(t('err', {msg: e.message}), true));
+    case 'open-app': ev.preventDefault(); return openApp(id).catch(e => toast(t('err', {msg: e.message}), true));
+    case 'open-person': return openPerson(id).catch(e => toast(t('err', {msg: e.message}), true));
+    case 'close': return closeDrawer();
+    case 'lang': LANG = LANG === 'en' ? 'zh' : 'en'; try { localStorage.setItem('jobpilot.lang', LANG); } catch (e) {} applyLang(); return refresh(true).then(() => reopen());
+    case 'theme': return cycleTheme();
+    case 'chart-mode': state.chartMode[id] = el.dataset.mode; return renderToday();
+    case 'pool-track': state.poolq.track = el.dataset.track; state.poolq.limit = 50; return renderPool();
+    case 'pool-more': state.poolq.limit += 50; return renderPool();
+    case 'sort': { const k = el.dataset.key; if (state.poolq.sort === k) state.poolq.order = state.poolq.order === 'asc' ? 'desc' : 'asc'; else { state.poolq.sort = k; state.poolq.order = k === 'company' || k === 'title' ? 'asc' : 'desc'; } return renderPool(); }
+    case 'mark': { const r = await post('posting/mark', {id, status: el.dataset.status}); if (r) { toast(t('saved')); afterWrite(); } return; }
+    case 'save-app': { const r = await post('app/create', {posting_id: id, applied: false}); if (r) { toast(t('saved')); afterWrite(); } return; }
+    case 'applied-form': return appliedForm(id);
+    case 'applied-cancel': { const b = $('#applied-form'); if (b) b.hidden = true; return; }
+    case 'applied-save': { const r = await post('app/create', {posting_id: id, applied: true, date: ($('#af-date') || {}).value}); if (r) { toast(t('saved')); afterWrite(); } return; }
+    case 'tailor': { const r = await post('tailor/start', {posting_id: id}); if (r) { toast(t('started')); state.tasks.push(r.task); updateChrome(state.cache.summary); } return; }
+    case 'run-daily': { const r = await post('run/daily', {}); if (r) { toast(t('started')); state.tasks.push(r.task); updateChrome(state.cache.summary); } return; }
+    case 'ev-form': return evForm(el.dataset.ev, id);
+    case 'ev-cancel': { const b = $('#ev-form'); if (b) b.hidden = true; return; }
+    case 'ev-save': {
+      const body = {app_id: id, event: el.dataset.ev};
+      const d = $('#ef-date'), dl = $('#ef-deadline'), tm = $('#ef-time'), nt = $('#ef-note');
+      if (d && d.value) body.date = d.value;
+      if (dl && dl.value) body.deadline = dl.value;
+      if (tm && tm.value) body.time = tm.value;
+      if (nt && nt.value.trim()) body.note = nt.value.trim();
+      if (body.event === 'interview_invited' && body.time) { const r0 = await post('app/event', Object.assign({}, body, {time: undefined})); if (!r0) return; body.event = 'interview_scheduled'; }
+      const r = await post('app/event', body); if (r) { toast(t('saved')); afterWrite(); } return;
+    }
+    case 'add-app': return addAppForm();
+    case 'add-app-save': {
+      const body = {company: $('#na-company').value.trim(), role: $('#na-role').value.trim(), url: $('#na-url').value.trim(), applied: $('#na-applied').checked};
+      if (!body.company || !body.role) return;
+      const r = await post('app/create', body); if (r) { toast(t('saved')); afterWrite(); } return;
+    }
+    case 'pick-company': state.refsCompany = el.dataset.key; return renderRefs();
+    case 'goto-refs': { const ck = (state.cache.refs && (state.cache.refs.companies || []).find(c => c.name === el.dataset.company)); closeDrawer(); if (ck) state.refsCompany = ck.key; return setTab('refs'); }
+    case 'net-find': { const company = $('#nf-company').value.trim(); if (!company) return; const r = await post('net/find', {company, url: $('#nf-url').value.trim()}); if (r) { toast(t('started')); state.tasks.push(r.task); } return; }
+    case 'net-cards': { const r = await post('net/cards', {company: el.dataset.company}); if (r) { toast(t('started')); state.tasks.push(r.task); } return; }
+    case 'net-mark': { const r = await post('net/mark', {pid: el.dataset.pid, event: el.dataset.ev}); if (r) { toast(t('saved')); afterWrite(); } return; }
+    case 'copy': return copyText(el.dataset.text, el);
+    case 'filtered-kind': state.filteredKind = el.dataset.kind; return renderSearch();
+    case 'static-file': ev.preventDefault(); return toast(t('static_write'));
+  }
+}
+async function afterWrite() {
+  state.cache.summary = null;
+  await refresh(true);
+  reopen();
+}
+function reopen() {
+  if (!state.drawer) return;
+  const {kind, id} = state.drawer;
+  ({posting: openPosting, app: openApp, person: openPerson}[kind] || (() => {}))(id).catch(() => closeDrawer());
+}
+async function copyText(text, btn) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e2) {} ta.remove(); }
+  const old = btn.innerHTML; btn.textContent = t('copied'); setTimeout(() => { btn.innerHTML = old; }, 1400);
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  if (el.tagName === 'A' && !el.getAttribute('href').startsWith('#') && el.dataset.act !== 'static-file') return;
+  act(el, e);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.drawer) { closeDrawer(); return; }
+  if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); if (state.tab !== 'pool') setTab('pool'); setTimeout(() => { const i = $('#pool-q'); if (i) i.focus(); }, 60); return; }
+  if (e.key === 'Enter' && document.activeElement && document.activeElement.matches('tr[data-act]')) { act(document.activeElement, e); }
+});
+let searchTimer;
+document.addEventListener('input', e => {
+  if (e.target.id === 'pool-q') { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.poolq.q = e.target.value; state.poolq.limit = 50; renderPool(); }, 220); }
+  if (e.target.id === 'pool-min') { const o = e.target.nextElementSibling; if (o) o.textContent = fmtNum(+e.target.value, 1); clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.poolq.min = +e.target.value; renderPool(); }, 180); }
+});
+document.addEventListener('change', e => { if (e.target.id === 'pool-status') { state.poolq.status = e.target.value; state.poolq.limit = 50; renderPool(); } });
+$('#scrim').addEventListener('click', closeDrawer);
+
+/* ------------------------------------------------------------------ chrome, theme, language */
+function applyLang() {
+  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
+  const tabs = ['today', 'pool', 'apps', 'refs', 'search', 'activity'];
+  html($('#tabs'), h`${tabs.map(x => h`<button class="tab" role="tab" data-act="tab" data-tab="${x}" aria-selected="${state.tab === x}">${t('tab_' + x)}</button>`)}`);
+  $('#lang-btn').textContent = t('lang_other');
+  html($('#run-btn'), h`${icon('play', 'icon-sm')}<span class="lbl">${t('run_now')}</span>`);
+  $('#theme-btn').setAttribute('aria-label', t('theme'));
+  setThemeIcon();
+}
+function setThemeIcon() {
+  const th = document.documentElement.dataset.theme;
+  html($('#theme-btn'), icon(th === 'dark' ? 'moon' : th === 'light' ? 'sun' : 'half'));
+}
+function cycleTheme() {
+  const cur = document.documentElement.dataset.theme || '';
+  const next = cur === '' ? 'dark' : cur === 'dark' ? 'light' : '';
+  if (next) document.documentElement.dataset.theme = next; else delete document.documentElement.dataset.theme;
+  try { if (next) localStorage.setItem('jobpilot.theme', next); else localStorage.removeItem('jobpilot.theme'); } catch (e) {}
+  setThemeIcon();
+}
+function updateChrome(sum) {
+  const running = (state.tasks || []).filter(x => x.status === 'running');
+  const pill = $('#run-pill');
+  pill.classList.toggle('busy', running.length > 0);
+  const lbl = pill.querySelector('.lbl');
+  if (running.length) lbl.textContent = t('running') + ' · ' + t('task_' + running[0].kind);
+  else if (sum && sum.last_daily) lbl.textContent = t('last_run', {when: ago(sum.last_daily.at)});
+  else lbl.textContent = '';
+  const banner = $('#banner'), msgs = [];
+  if (STATIC) msgs.push(['', t('static_banner')]);
+  else if (S && S.demo) msgs.push(['', t('demo_banner')]);
+  if (sum && sum.paused) msgs.push(['warn', t('paused_banner')]);
+  banner.hidden = !msgs.length;
+  if (msgs.length) html(banner, h`${msgs.map(([cls, m]) => h`<div class="b ${cls}">${icon(cls ? 'alert' : 'spark', 'icon-sm')}<span>${md(m)}</span></div>`)}`);
+  $('#run-btn').disabled = !!(running.find(x => x.kind === 'daily'));
+}
+let prevRunning = new Set();
+async function poll() {
+  if (document.hidden || STATIC) return;
+  const running = (state.tasks || []).filter(x => x.status === 'running');
+  const wait = running.length ? 5000 : 30000;
+  if (Date.now() - state.lastFetch < wait) return;
+  try {
+    const tasks = await api('tasks', {n: 20});
+    tasks.forEach(task => {
+      if (prevRunning.has(task.id) && task.status !== 'running') toast(t(task.status === 'done' ? 'task_done' : 'task_failed', {kind: t('task_' + task.kind)}), task.status !== 'done');
+    });
+    prevRunning = new Set(tasks.filter(x => x.status === 'running').map(x => x.id));
+    state.tasks = tasks;
+  } catch (e) { return; }
+  state.cache.summary = null;
+  refresh();
+}
+
+/* ------------------------------------------------------------------ login and boot */
+function showLogin() {
+  const box = $('#login');
+  if (!box.hidden) return;
+  box.hidden = false;
+  html(box, h`<div class="card"><h2>${t('login_t')}</h2><p>${md(t('login_p'))}</p>
+    <input class="input" id="login-key" type="password" placeholder="${t('key')}" autocomplete="off">
+    <button class="btn btn-primary" id="login-go">${t('sign_in')}</button><p class="muted" id="login-err"></p></div>`);
+  const go = async () => {
+    const res = await fetch('/api/login', {method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'same-origin', body: JSON.stringify({key: $('#login-key').value.trim()})});
+    if (res.ok) { box.hidden = true; boot(); } else $('#login-err').textContent = t('bad_key');
+  };
+  $('#login-go').addEventListener('click', go);
+  $('#login-key').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+}
+async function boot() {
+  const params = new URLSearchParams(location.hash.slice(1).includes('=') ? location.hash.slice(1) : 'tab=' + (location.hash.slice(1) || 'today'));
+  const qkey = new URLSearchParams(location.search).get('key');
+  if (qkey && !STATIC) {
+    await fetch('/api/login', {method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'same-origin', body: JSON.stringify({key: qkey})});
+    history.replaceState(null, '', location.pathname + location.hash);
+  }
+  try { S = await api('session'); } catch (e) { if (String(e.message) !== 'sign in') toast(t('offline'), true); return; }
+  let stored = null; try { stored = localStorage.getItem('jobpilot.lang'); } catch (e) {}
+  LANG = params.get('lang') || stored || S.language || 'en';
+  if (!I18N[LANG]) LANG = 'en';
+  let theme = params.get('theme'); if (!theme) { try { theme = localStorage.getItem('jobpilot.theme'); } catch (e) {} }
+  if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+  if (params.get('shot')) document.body.classList.add('shot');
+  $('#ws-name').textContent = S.workspace || '';
+  const tab = params.get('tab');
+  state.tab = ['today', 'pool', 'apps', 'refs', 'search', 'activity'].includes(tab) ? tab : 'today';
+  if (params.get('status')) state.poolq.status = params.get('status');
+  applyLang();
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== 'view-' + state.tab; });
+  await refresh(true);
+  const open = params.get('open');
+  if (open && open.includes(':')) {
+    const [kind, oid] = [open.slice(0, open.indexOf(':')), open.slice(open.indexOf(':') + 1)];
+    state.drawer = {kind, id: oid}; reopen();
+  }
+  if (!state.booted) {
+    state.booted = true;
+    setInterval(poll, 2500);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { state.lastFetch = 0; poll(); } });
+  }
+  window.__jobpilotReady = true;
+}
+boot();
+})();
+</script>
+</body>
+</html>
