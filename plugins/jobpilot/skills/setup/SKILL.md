@@ -53,9 +53,10 @@ One AskUserQuestion call (up to 4 questions):
 
 Then propose 2-4 **tracks** (role families) the resume supports, each with a one-line reason that cites the resume,
 ordered by fit, and ask the user to pick and rank them (AskUserQuestion, multiSelect; "Other" lets them add one).
-Ask for a minimum salary only if they care (`candidate.min_salary_usd`, 0 = off), companies to avoid
-(`filters.exclude_companies`) and their schools for the referral finder (`candidate.schools`, prefilled from the
-resume: confirm the exact official names).
+Ask for a minimum salary only if they care (`candidate.min_salary_usd`, 0 = off; optionally a target,
+`candidate.target_salary_usd`: roles paying less than the target but at least the minimum stay in as labeled practice
+roles, queued last), companies to avoid (`filters.exclude_companies`) and their schools for the referral finder
+(`candidate.schools`, prefilled from the resume: confirm the exact official names).
 
 ## 5. rubric.md
 
@@ -65,7 +66,8 @@ Follow rubric-guide.md: one rubric per chosen track with anchors grounded in thi
 ## 6. jobpilot.toml
 
 Edit the file (keep its comments). Fill `[candidate]` (name, resume = "profile/resume.docx" or the master you made,
-work_authorization, seniority, locations, work_arrangements, min_salary_usd, languages, schools), `[app]`, and add:
+work_authorization, seniority, locations, work_arrangements, min_salary_usd, target_salary_usd, languages, schools),
+`[app]`, and add:
 - `[[tracks]]` per track: id (short, lowercase: e.g. "mle", "ds", "swe", "qr"), name, priority (1 = first choice;
   equal numbers rank equal), min_score (5.0 default; 5.5-6 for a fallback track), description (one sentence: the
   core duties that put a role on this track), categories (exactly the rubric's list).

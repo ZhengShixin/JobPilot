@@ -230,6 +230,29 @@ class CoreTest(support.EnvCase):
         self.assertNotIn("4000000001", [r["id"] for r in pool.queue(self.ws)])
         self.assertEqual(util.jsonl_read(self.ws.pool_events_path)[-1]["to"], "skipped")
 
+    def test_practice_roles(self):
+        """Between the salary floor and the target: admitted, labeled practice, queued after the regular roles."""
+        cfg = support.CONFIG.replace("min_salary_usd = 90000", "min_salary_usd = 90000\ntarget_salary_usd = 200000")
+        self.ws = support.make_ws(config_text=cfg)
+        self._collect_and_review()
+        cfg = self.ws.cfg
+        practice = self.ws.db.get("4000000001")                       # advertises $180,000
+        self.assertEqual(practice["status"], "ready")
+        self.assertTrue(pool.is_practice(practice, cfg))
+        self.assertFalse(pool.is_practice(self.ws.db.get("4000000005"), cfg))   # no salary: a regular role
+        self.assertIn("$180,000", pool.practice_note(practice, cfg))
+        mle = [r["id"] for r in pool.queue(self.ws) if r["track"] == "mle"]
+        self.assertEqual(mle, ["4000000005", "4000000001"])
+        pub = pool.public(practice, cfg=cfg)
+        self.assertEqual(pub["salary_band"], "practice")
+        self.assertNotIn("salary_band", pool.public(practice))          # without the config: unknown
+        self.assertEqual(triage.drop({"title": "ML Engineer", "employment_type": "FULL_TIME", "company": "X",
+                                      "salary_max_usd": 80000}, "", cfg)[0], "salary")   # the floor still drops
+        text, _ = brief.build(self.ws)
+        self.assertIn("low pay · practice", text)
+        warn = config._merge(cfg, {"candidate": {"target_salary_usd": 50000}})
+        self.assertTrue(any("target_salary_usd" in m for lvl, m in config.check(warn) if lvl == "warn"))
+
     def test_ledger_stages(self):
         a = ledger.create(self.ws, "Acme Robotics", "ML Engineer", posting_id="4000000001", track="mle")
         self.assertEqual(ledger.create(self.ws, "Acme Robotics", "ML Engineer", posting_id="4000000001"), a)

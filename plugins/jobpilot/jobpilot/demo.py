@@ -26,6 +26,7 @@ work_authorization = "permanent_resident"
 seniority = ["entry", "mid"]
 locations = ["United States"]
 min_salary_usd = 110000
+target_salary_usd = 140000
 languages = ["English", "Spanish"]
 schools = ["Lakeside State University", "Northfield Institute of Technology"]
 
@@ -591,14 +592,16 @@ def _postings(d):
     # ready, earlier this week
     A("Acme Robotics", "Machine Learning Engineer II", "mle", "high", first_seen=d.day(1), group=S["mle"])
     A("Bluefin Capital", "Machine Learning Engineer", "mle", "mid", first_seen=d.day(2), group=S["mle"])
-    A("Beacon Learning", "LLM Engineer", "mle", "mid", first_seen=d.day(3), group="mle-applied", duty=DUTIES["mle"][3])
+    A("Beacon Learning", "LLM Engineer", "mle", "mid", first_seen=d.day(3), group="mle-applied", duty=DUTIES["mle"][3],
+      salary=(112000, 126000))                                          # under the target: a practice role
     A("Meridian Freight", "Senior Machine Learning Engineer", "mle", "capped", first_seen=d.day(4), group=S["mle"],
       duty=DUTIES["mle"][1])
     A("Lattice Labs", "Applied ML Engineer", "mle", "high", first_seen=d.day(5), group="mle-applied")
     A("Vertex Mobility", "Machine Learning Engineer, Autonomy", "mle", "k8s", first_seen=d.day(3, 7, 32),
       group="mle-core", duty=DUTIES["mle"][1])
     A("Harborview Bank", "Machine Learning Engineer, Risk Models", "mle", "mid", first_seen=d.day(6), group=S["mle"])
-    A("Juniper Travel", "Data Scientist, Growth", "ds", "high", first_seen=d.day(1), group=S["ds"], duty=DUTIES["ds"][0])
+    A("Juniper Travel", "Data Scientist, Growth", "ds", "high", first_seen=d.day(1), group=S["ds"], duty=DUTIES["ds"][0],
+      salary=(115000, 136000))                                          # under the target: a practice role
     A("Summit Payments", "Decision Scientist", "ds", "mid", first_seen=d.day(2), group=S["ds"], duty=DUTIES["ds"][4])
     A("Kestrel Security", "Data Scientist II", "ds", "high", first_seen=d.day(3), group=S["ds"])
     A("Vertex Mobility", "Data Scientist, Demand Forecasting", "ds", "mid", first_seen=d.day(4), group=S["ds"],

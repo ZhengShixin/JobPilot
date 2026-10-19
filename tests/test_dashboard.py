@@ -149,6 +149,16 @@ class DashboardTest(unittest.TestCase):
         page = self.get("/api/pool?status=all&limit=5&offset=5")
         self.assertEqual(len(page["rows"]), 5)
 
+    def test_practice_roles_are_tagged_and_searchable(self):
+        rows = self.get("/api/pool?status=ready&limit=500")["rows"]
+        practice = sorted(r["company"] for r in rows if r.get("salary_band") == "practice")
+        self.assertEqual(practice, ["Beacon Learning", "Juniper Travel"])
+        for word in ("practice", "%E7%BB%83%E6%89%8B"):                   # 练手
+            found = self.get("/api/pool?status=ready&limit=500&q=" + word)["rows"]
+            self.assertEqual(sorted(r["company"] for r in found), practice)
+        ds = [r["company"] for r in self.get("/api/queue?n=200") if r["track"] == "ds"]
+        self.assertEqual(ds[-1], "Juniper Travel")                       # after the regular roles of its track
+
     def test_posting_detail_has_evidence_and_jd(self):
         p = self.get("/api/posting?id=" + self.ready_ids(1)[0])
         self.assertIn("jd", p)

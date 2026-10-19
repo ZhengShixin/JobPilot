@@ -30,6 +30,7 @@ DEFAULTS = {
         "locations": ["United States"],
         "work_arrangements": [],
         "min_salary_usd": 0,
+        "target_salary_usd": 0,        # roles advertising less (but at least min_salary_usd) are practice roles
         "languages": ["English"],
         "schools": [],
         "open_to_internships": False,
@@ -215,6 +216,13 @@ def check(cfg, workspace=None):
     cand = cfg.get("candidate") or {}
     if not cand.get("name"):
         warn("candidate.name is empty (used for resume file names and outreach sign-offs)")
+    try:
+        floor, target = float(cand.get("min_salary_usd") or 0), float(cand.get("target_salary_usd") or 0)
+        if target and target <= floor:
+            warn("candidate.target_salary_usd (%s) is not above min_salary_usd (%s): no role will be a practice role"
+                 % ("{:,.0f}".format(target), "{:,.0f}".format(floor)))
+    except (TypeError, ValueError):
+        err("candidate.min_salary_usd and target_salary_usd must be numbers")
     wa = cand.get("work_authorization")
     if wa and wa not in WORK_AUTH:
         err("candidate.work_authorization must be one of %s" % ", ".join(WORK_AUTH))

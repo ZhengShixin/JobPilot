@@ -159,6 +159,10 @@ main{max-width:1240px;margin:0 auto;padding:22px 24px 40px}
 .m-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .gap-chip{font-size:11.5px;color:var(--warning-text);background:var(--warning-soft);padding:1px 8px;border-radius:999px;
   max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.practice{display:inline-flex;align-items:center;font-size:11px;font-weight:650;color:var(--warning-text);
+  border:1px solid color-mix(in srgb,var(--warning) 55%,transparent);padding:0 7px;border-radius:999px;white-space:nowrap;
+  line-height:17px;vertical-align:1px}
+.tbl .role b .practice{margin-left:6px}
 .ring{position:relative;width:40px;height:40px}
 .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
@@ -551,6 +555,7 @@ en: {
   search_ph:'Search title, company or location',
   all:'All', st_ready:'Ready', st_saved:'Saved', st_applied:'Applied', st_skipped:'Skipped', st_below:'Below bar',
   st_excluded:'Not a fit', st_filtered:'Filtered', st_pending:'In review', st_stale:'Stale', st_admitted:'In the pool', st_all:'Everything',
+  practice:'Low pay · practice', practice_tip:'The advertised pay is under your target salary: worth applying to for interview practice.',
   min_score:'Min score', sort_score:'Best score', sort_posted:'Newest', sort_company:'Company', sort_title:'Title',
   c_score:'Score', c_role:'Role', c_track:'Track', c_loc:'Location', c_posted:'Posted', c_status:'Status',
   showing:'Showing {n} of {total}', more:'Show more', empty_pool_t:'Nothing matches', empty_pool:'Try another status or clear the search.',
@@ -649,6 +654,7 @@ zh: {
   search_ph:'搜索职位、公司或地点',
   all:'全部', st_ready:'可投', st_saved:'已保存', st_applied:'已投递', st_skipped:'已跳过', st_below:'低于门槛',
   st_excluded:'不匹配', st_filtered:'已粗筛', st_pending:'待评审', st_stale:'已过期', st_admitted:'库内全部', st_all:'所有岗位',
+  practice:'低薪·练手', practice_tip:'公布的薪资低于你的目标：可以投来练面试。',
   min_score:'最低分', sort_score:'分数最高', sort_posted:'最新发布', sort_company:'公司', sort_title:'职位',
   c_score:'分数', c_role:'职位', c_track:'方向', c_loc:'地点', c_posted:'发布', c_status:'状态',
   showing:'显示 {n} / {total}', more:'显示更多', empty_pool_t:'没有符合条件的岗位', empty_pool:'换一个状态，或清空搜索。',
@@ -848,7 +854,8 @@ function filterPool(rows, q) {
   const counts = {}, trackCounts = {};
   rows.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
   let out = rows.filter(r => !statuses || statuses.includes(r.status));
-  out = out.filter(r => !text || (String(r.title) + ' ' + r.company + ' ' + (r.location || '')).toLowerCase().includes(text));
+  const words = r => String(r.title) + ' ' + r.company + ' ' + (r.location || '') + (r.salary_band === 'practice' ? ' low pay practice 低薪 练手' : '');
+  out = out.filter(r => !text || words(r).toLowerCase().includes(text));
   out = out.filter(r => min === null || (r.score || 0) >= min);
   out.forEach(r => { const k = r.track || ''; trackCounts[k] = (trackCounts[k] || 0) + 1; });
   if (q.track) out = out.filter(r => r.track === q.track);
@@ -1000,6 +1007,7 @@ function paintFills(root) { root.querySelectorAll('[data-fill]').forEach(el => {
 
 /* ------------------------------------------------------------------ views: today */
 function greeting() { const hr = new Date().getHours(); return t(hr < 12 ? 'greet_m' : hr < 18 ? 'greet_a' : 'greet_e'); }
+const practiceTag = r => (r.salary_band === 'practice' ? h`<span class="practice" title="${t('practice_tip')}">${t('practice')}</span>` : '');
 function matchRow(r) {
   const gap = (r.gaps || [])[0];
   return h`<button class="match" data-act="open-posting" data-id="${r.id}">
@@ -1007,7 +1015,7 @@ function matchRow(r) {
     <span class="m-main"><span class="m-title">${r.title}</span>
       <span class="m-meta">${r.company} · ${shortLoc(r.location)}${r.work_arrangement ? ' · ' + r.work_arrangement : ''} · ${ago(r.posted_at || r.first_seen)}</span>
       ${r.reason ? h`<span class="m-why">${r.reason}</span>` : ''}</span>
-    <span class="m-side">${gap ? h`<span class="gap-chip" title="${gap}">${gap}</span>` : ''}${r.salary ? h`<span class="muted num" >${r.salary.replace(/^USD /, '$').replace(/ \/ year$/, '')}</span>` : ''}</span>
+    <span class="m-side">${practiceTag(r)}${gap ? h`<span class="gap-chip" title="${gap}">${gap}</span>` : ''}${r.salary ? h`<span class="muted num" >${r.salary.replace(/^USD /, '$').replace(/ \/ year$/, '')}</span>` : ''}</span>
   </button>`;
 }
 function emptyState(ic, title, text, extra) { return h`<div class="empty">${icon(ic)}<div class="t">${title}</div><div>${text}</div>${extra || ''}</div>`; }
@@ -1119,7 +1127,7 @@ async function renderPool(append) {
     <thead><tr><th>${sortBtn('score', t('c_score'))}</th><th>${sortBtn('title', t('c_role'))}</th><th>${t('c_track')}</th><th>${t('c_loc')}</th><th>${sortBtn('posted', t('c_posted'))}</th><th>${t('c_status')}</th></tr></thead>
     <tbody>${data.rows.map(r => h`<tr data-act="open-posting" data-id="${r.id}" tabindex="0">
       <td class="c-score">${r.score !== undefined && r.score !== null ? h`<span class="score-cell">${fmtNum(r.score, 1)}<span class="bar"><i data-w="${r.score * 10}" data-track="${r.track || ''}"></i></span></span>` : h`<span class="muted">–</span>`}</td>
-      <td class="role"><b>${r.title}</b><span>${r.company}${r.salary ? ' · ' + r.salary.replace(/^USD /, '$').replace(/ \/ year$/, '') : ''}</span></td>
+      <td class="role"><b>${r.title}${practiceTag(r)}</b><span>${r.company}${r.salary ? ' · ' + r.salary.replace(/^USD /, '$').replace(/ \/ year$/, '') : ''}</span></td>
       <td class="c-track">${r.track && r.track !== 'none' ? h`<span class="chip">${trackDot(r.track)}${trackName(r.track)}</span>` : h`<span class="muted">–</span>`}</td>
       <td class="c-loc muted">${shortLoc(r.location)}</td>
       <td class="c-posted muted num">${ago(r.posted_at || r.first_seen)}</td>
@@ -1318,7 +1326,7 @@ async function openPosting(id) {
   if (['skipped', 'hold', 'below_threshold', 'excluded'].includes(p.status)) right.push(h`<button class="btn btn-ghost" data-act="mark" data-id="${p.id}" data-status="ready">${t('a_ready')}</button>`);
   const app = p.application;
   openDrawer(h`
-  <div class="d-head"><div class="d-top">${p.track && p.track !== 'none' ? h`<span class="chip">${trackDot(p.track)}${trackName(p.track)}</span>` : ''}${statusChip(p.status)}
+  <div class="d-head"><div class="d-top">${p.track && p.track !== 'none' ? h`<span class="chip">${trackDot(p.track)}${trackName(p.track)}</span>` : ''}${statusChip(p.status)}${practiceTag(p)}
     <div class="right"><button class="btn btn-ghost btn-icon" data-act="close" aria-label="Close">${icon('close')}</button></div></div>
     <h2 class="d-title">${p.title}</h2>
     <div class="d-sub"><span>${p.company}</span><span>${shortLoc(p.location)}</span>${p.work_arrangement ? h`<span>${p.work_arrangement}</span>` : ''}<span>${ago(p.posted_at || p.first_seen)}</span>${p.salary ? h`<span class="num">${p.salary}</span>` : ''}</div>
@@ -1333,6 +1341,7 @@ async function openPosting(id) {
         ${(p.reasons || {})[k] ? h`<div class="why">${p.reasons[k]}</div>` : ''}
         ${quotes((p.jd_quotes || {})[k], 'jd')}${quotes((p.profile_quotes || {})[k], 'you')}</div>`)}</div></section>
       <section class="sec"><h3>${t('gaps')}</h3>${(p.gaps || []).length ? h`<div class="chips">${p.gaps.map(g => h`<span class="gap-chip">${g}</span>`)}</div>` : h`<div class="muted">${t('no_gaps')}</div>`}</section>` : ''}
+    ${p.salary_band === 'practice' ? h`<section class="sec"><div class="problem">${icon('alert', 'icon-sm')}<span>${t('practice_tip')}</span></div></section>` : ''}
     ${p.reason ? h`<section class="sec"><h3>${p.status === 'excluded' ? t('filtered_why') : t('why_track')}</h3><div>${p.reason}</div>${quotes(p.evidence, 'jd')}
       ${(p.flags || []).length ? h`<div class="muted" style-hook>${t('eligibility')}: ${p.flags.join(', ')}</div>` : ''}</section>` : ''}
     ${p.triage ? h`<section class="sec"><h3>${t('filtered_why')}</h3><div>${t('k_filter')} · ${p.triage.rule}: ${p.triage.detail}</div></section>` : ''}

@@ -15,6 +15,7 @@
 | `locations` | ["United States"] | Apify `locationSearch` values ("New York, New York, United States", "London, England, United Kingdom", ...) |
 | `work_arrangements` | [] | any of `On-site`, `Hybrid`, `Remote OK`, `Remote Solely` ([] = any) |
 | `min_salary_usd` | 0 | drop postings whose advertised annual maximum is lower (0 = off) |
+| `target_salary_usd` | 0 | a posting advertising a maximum under this (and at least the floor) is admitted as a **practice role**: tagged "Low pay · practice" (searchable), queued after the regular roles of its track, marked in the daily report; no advertised salary = a regular role (0 = off) |
 | `languages` | ["English"] | languages you work in (others required by a JD exclude it) |
 | `schools` | [] | official school names, for the referral finder |
 | `open_to_internships`, `open_to_contract` | false | keep internships / contract roles |

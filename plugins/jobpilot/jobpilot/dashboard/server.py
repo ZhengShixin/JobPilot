@@ -43,6 +43,7 @@ STATUS_GROUPS = {
     "below": ("below_threshold",), "excluded": ("excluded",), "filtered": ("dropped",), "pending": ("pending",),
     "stale": ("stale",), "admitted": ADMITTED, "all": None,
 }
+PRACTICE_WORDS = "low pay practice 低薪 练手"     # the pool search finds practice roles by these
 COLUMNS = {"planned": "saved", "applied": "applied", "oa": "assessment", "interview": "interview", "offer": "offer",
            "rejected": "closed", "withdrawn": "closed", "closed": "closed"}
 NET_EVENTS = ("connect_sent", "email_sent", "accepted", "message_sent", "replied", "chat_scheduled", "chat_done",
@@ -152,7 +153,7 @@ def _age_days(ws, value):
 
 
 def _row(ws, r, full=False):
-    out = pool.public(r, full=full)
+    out = pool.public(r, full=full, cfg=ws.cfg)
     out["age_days"] = _age_days(ws, r.get("posted_at") or r.get("first_seen"))
     return out
 
@@ -398,7 +399,10 @@ class Views:
         track_counts = {}
         out = []
         for r in rows:
-            if text and text not in ("%s %s %s" % (r.get("title"), r.get("company"), r.get("location"))).casefold():
+            words = "%s %s %s" % (r.get("title"), r.get("company"), r.get("location"))
+            if pool.is_practice(r, ws.cfg):
+                words += " " + PRACTICE_WORDS
+            if text and text not in words.casefold():
                 continue
             if min_score is not None and (r.get("score") or 0) < min_score:
                 continue

@@ -15,7 +15,7 @@ T = {
         "oa": "Assessment for {company} ({role}) due {due}", "iv": "Interview with {company} ({role}) at {time}",
         "unsched": "Interview with {company} ({role}): no time agreed yet",
         "fu": "Follow up on {company} ({role}): applied {days} days ago, no answer yet",
-        "pipeline": "Pipeline", "queue": "{n} postings ready in the queue",
+        "pipeline": "Pipeline", "queue": "{n} postings ready in the queue", "practice": " — low pay · practice",
         "funnel": "{applied} applied · {oa} assessments · {interview} interviews · {offer} offers · {open} open",
         "spend": "Search spend", "spend_line": "today ${today:.2f} of ${cap:.2f} · this month ${month:.2f} of ${monthly:.2f}",
         "problems": "Problems", "next": "Next steps",
@@ -31,7 +31,7 @@ T = {
         "oa": "{company}（{role}）的测评 {due} 截止", "iv": "{company}（{role}）面试：{time}",
         "unsched": "{company}（{role}）面试：还没约定时间",
         "fu": "跟进 {company}（{role}）：投递已 {days} 天，还没有回复",
-        "pipeline": "投递进展", "queue": "队列里有 {n} 个可投岗位",
+        "pipeline": "投递进展", "queue": "队列里有 {n} 个可投岗位", "practice": "（低薪·练手）",
         "funnel": "已投 {applied} · 测评 {oa} · 面试 {interview} · offer {offer} · 进行中 {open}",
         "spend": "搜索花费", "spend_line": "今天 ${today:.2f} / ${cap:.2f} · 本月 ${month:.2f} / ${monthly:.2f}",
         "problems": "问题", "next": "下一步",
@@ -55,7 +55,7 @@ def build(ws, date=None, collect=None, review=None, problems=None):
         admitted = [r for r in new_rows if r.get("track") == tr["id"] and r.get("status") in ("ready", "applied", "hold")]
         tops = sorted(admitted, key=lambda r: -(r.get("score") or 0))[:3]
         tracks.append({"id": tr["id"], "name": tr.get("name", tr["id"]), "seen": len(seen), "admitted": len(admitted),
-                       "top": [pool.public(r) for r in tops]})
+                       "top": [pool.public(r, cfg=cfg) for r in tops]})
     due = ledger.due(ws)
     fun = ledger.funnel(ws)
     money = budget.summary(ws)
@@ -67,8 +67,9 @@ def build(ws, date=None, collect=None, review=None, problems=None):
     for tr in tracks:
         lines.append("- " + t["track_line"].format(**tr))
         for r in tr["top"]:
-            lines.append("  - %s · %s — %s (%s %.1f) %s" % (r.get("company"), r.get("title"), r.get("location") or "",
-                                                           t["score"], r.get("score") or 0, r.get("url") or ""))
+            lines.append("  - %s · %s — %s (%s %.1f)%s %s" % (
+                r.get("company"), r.get("title"), r.get("location") or "", t["score"], r.get("score") or 0,
+                t["practice"] if r.get("salary_band") == "practice" else "", r.get("url") or ""))
     if not any(tr["admitted"] for tr in tracks):
         lines += ["", t["none_new"]]
     lines += ["", "## " + t["due"], ""]

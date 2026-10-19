@@ -20,6 +20,10 @@
   you type stays on the page); `jobpilot net email P0007 [--feedback ...]` adds the email to an older card (a new
   card version). Mark `email_sent`; the follow-up comes due after 7 days. Nothing is sent and no address is looked
   up.
+- Practice roles: `candidate.min_salary_usd` stays the hard floor; with the new `candidate.target_salary_usd`, a role
+  whose advertised annual maximum lies under the target is admitted as a practice role: tagged "Low pay · practice"
+  / 「低薪·练手」 (the pool search finds it by those words), queued after the regular roles of its track and marked in
+  the daily report. A role without an advertised salary stays a regular role.
 
 ### Fixed
 

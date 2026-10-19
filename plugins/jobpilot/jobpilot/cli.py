@@ -206,7 +206,9 @@ def _row_line(r):
 
 def cmd_queue(ws, args):
     rows = pool.queue(ws, limit=args.n, track=args.track)
-    return out(args, [pool.public(r) for r in rows], "\n".join(_row_line(r) for r in rows) or "the queue is empty")
+    return out(args, [pool.public(r, cfg=ws.cfg) for r in rows],
+               "\n".join(_row_line(r) + (" (practice)" if pool.is_practice(r, ws.cfg) else "") for r in rows)
+               or "the queue is empty")
 
 
 def cmd_pool(ws, args):
@@ -219,20 +221,21 @@ def cmd_pool(ws, args):
             where += " AND track=?"
             params.append(args.track)
         rows = ws.db.find(where, params, order="score DESC, first_seen DESC", limit=args.limit)
-        return out(args, [pool.public(r) for r in rows], "\n".join(_row_line(r) for r in rows) or "no postings")
+        return out(args, [pool.public(r, cfg=ws.cfg) for r in rows], "\n".join(_row_line(r) for r in rows)
+                   or "no postings")
     if args.action == "show":
         row = ws.db.get(args.id)
         if not row:
             print("no posting %s" % args.id, file=sys.stderr)
             return 1
         from . import search
-        data = pool.public(row, full=True)
+        data = pool.public(row, full=True, cfg=ws.cfg)
         if args.jd:
             data["jd"] = search.read_jd(ws, row["id"])
         return out(args, data)
     if args.action == "mark":
         row = pool.mark(ws, args.id, args.status, note=args.note or "")
-        return out(args, pool.public(row), "%s -> %s" % (row["id"], row["status"]))
+        return out(args, pool.public(row, cfg=ws.cfg), "%s -> %s" % (row["id"], row["status"]))
     if args.action == "add":
         from . import search
         jd = open(args.jd_file, encoding="utf-8").read() if args.jd_file else sys.stdin.read()
@@ -245,7 +248,7 @@ def cmd_pool(ws, args):
             from . import review
             review.run(ws, ids=[row["id"]], log=(lambda *_: None) if args.json else print)
             row = ws.db.get(row["id"])
-        return out(args, pool.public(row, full=True), "added %s (%s at %s): %s" % (
+        return out(args, pool.public(row, full=True, cfg=ws.cfg), "added %s (%s at %s): %s" % (
             row["id"], row["title"], row["company"], row.get("status")))
     raise AssertionError(args.action)
 

@@ -1,12 +1,32 @@
 """The job pool: reviewed postings that cleared the bar, their statuses, and the queue you apply from.
 
-Queue order: track preference first (priority 1 before 2), then each company's best posting before its second best
-(so one firm never fills the top of the list), then score, then the newest posting. Status changes are also written
-to data/pool-events.jsonl, so nothing a user decided is ever lost.
+Queue order: track preference first (priority 1 before 2), then regular roles before low-pay practice roles, then each
+company's best posting before its second best (so one firm never fills the top of the list), then score, then the
+newest posting. Status changes are also written to data/pool-events.jsonl, so nothing a user decided is ever lost.
+
+Practice roles: a posting whose advertised annual maximum lies between candidate.min_salary_usd (the floor; below it
+the coarse filter drops the posting) and candidate.target_salary_usd is admitted like any other, labeled "practice"
+(worth applying to for interview practice) and queued after the regular roles of its track. A posting without an
+advertised salary is a regular role.
 """
 from . import config, util
 
 MARKS = ("ready", "skipped", "hold", "applied")
+
+
+def practice_note(row, cfg):
+    """'' for a regular role, or why it is a low-pay practice role (its advertised ceiling under the target)."""
+    cand = (cfg or {}).get("candidate") or {}
+    target = float(cand.get("target_salary_usd") or 0)
+    top = row.get("salary_max_usd")
+    if target and isinstance(top, (int, float)) and 0 < top < target:
+        return "advertised maximum $%s, under your $%s target: a practice role" % ("{:,.0f}".format(top),
+                                                                                   "{:,.0f}".format(target))
+    return ""
+
+
+def is_practice(row, cfg):
+    return bool(practice_note(row, cfg))
 
 
 def queue(ws, limit=None, track=None):
@@ -30,7 +50,8 @@ def queue(ws, limit=None, track=None):
         seen.add(key)
     tiers = {t: config.tier(cfg, t) for t in config.track_ids(cfg)}
     ordered = first + rest
-    ordered.sort(key=lambda r: tiers.get(r.get("track"), 99))  # stable: keeps "best per company first" inside a tier
+    # stable: keeps "best per company first" inside a tier; practice roles after the regular ones of their track
+    ordered.sort(key=lambda r: (tiers.get(r.get("track"), 99), is_practice(r, cfg)))
     return ordered[:limit] if limit else ordered
 
 
@@ -69,8 +90,9 @@ def top(ws, track, since=None, n=3):
     return rows[:n]
 
 
-def public(row, full=False):
-    """A posting as the dashboard and `--json` output show it (no raw review text)."""
+def public(row, full=False, cfg=None):
+    """A posting as the dashboard and `--json` output show it (no raw review text); with the config, also whether it is
+    a low-pay practice role."""
     keys = ("id", "title", "company", "location", "work_arrangement", "employment_type", "seniority", "salary",
             "posted_at", "first_seen", "url", "apply_url", "status", "status_note", "stage", "track", "score",
             "app_id", "company_slug", "industry", "agency", "experience_level", "source")
@@ -87,6 +109,9 @@ def public(row, full=False):
                       "careers_url", "intermediary", "model", "reviewed_at", "reused_from"):
                 if rv.get(k) not in (None, "", [], {}):
                     out[k] = rv[k]
+    note = practice_note(row, cfg) if cfg else ""
+    if note:
+        out["salary_band"], out["practice_note"] = "practice", note
     if row.get("triage"):
         out["triage"] = row["triage"]
     if full and row.get("recruiter"):

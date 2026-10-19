@@ -25,7 +25,8 @@ JobPilot does the tedious parts and leaves the decisions — and the submit butt
   that plan offline against example titles before it costs a cent.
 - **A daily shortlist, not a firehose.** Each day it collects new postings under hard budget caps, drops what you can
   never take for free (internships, citizenship-only roles, "no sponsorship" if you need it, salary floors, gig
-  platforms), and has Claude review the rest in batches.
+  platforms), and has Claude review the rest in batches. Roles paying less than your target (but above the floor)
+  can stay in as labeled practice roles for interview practice, queued after the rest.
 - **Scores you can audit.** Every score is four components (duties, background, skills, seniority) with **verbatim
   quotes** from the job description and from your profile. JobPilot's code checks each quote really exists and
   rejects the review if it doesn't. No hallucinated "great fit".

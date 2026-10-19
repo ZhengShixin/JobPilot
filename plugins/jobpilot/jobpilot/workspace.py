@@ -35,6 +35,7 @@ seniority = []                    # target levels: entry | mid | senior | lead
 locations = ["United States"]     # Apify locationSearch format: "United States", "New York, New York, United States"
 work_arrangements = []            # [] = any, or some of "On-site", "Hybrid", "Remote OK", "Remote Solely"
 min_salary_usd = 0                # drop postings whose advertised annual maximum is below this (0 = off)
+target_salary_usd = 0             # between the two: admitted, labeled "practice", queued last (0 = off)
 languages = ["English"]
 schools = []                      # your schools, for the alumni referral finder
 
