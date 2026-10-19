@@ -1,0 +1,15 @@
+#!/bin/sh
+# JobPilot CLI launcher. Finds Python 3.11+ and runs the bundled package in isolated mode (-I), so a stray
+# json.py or PYTHONPATH in the current directory can never shadow the standard library.
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+for py in "$JOBPILOT_PYTHON" python3.14 python3.13 python3.12 python3.11 python3 \
+          /opt/homebrew/bin/python3 /usr/local/bin/python3; do
+  [ -n "$py" ] || continue
+  command -v "$py" >/dev/null 2>&1 || continue
+  if "$py" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+    exec "$py" -I -c 'import sys; sys.path.insert(0, sys.argv[1]); from jobpilot.cli import main; sys.exit(main(sys.argv[2:]))' "$ROOT" "$@"
+  fi
+done
+echo "JobPilot needs Python 3.11 or newer. Install it (macOS: 'brew install python@3.12'; any OS: 'uv python install 3.12')," >&2
+echo "or point JOBPILOT_PYTHON at an existing interpreter." >&2
+exit 1

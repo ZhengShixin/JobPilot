@@ -1,0 +1,496 @@
+{
+ "fantastic-jobs/advanced-linkedin-job-search-api": {
+  "EmploymentTypeFilter": {
+   "enum": [
+    "FULL_TIME",
+    "PART_TIME",
+    "CONTRACTOR",
+    "TEMPORARY",
+    "INTERN",
+    "VOLUNTEER",
+    "PER_DIEM",
+    "OTHER"
+   ],
+   "type": "array"
+  },
+  "aiEmploymentTypeFilter": {
+   "enum": [
+    "FULL_TIME",
+    "PART_TIME",
+    "CONTRACTOR",
+    "TEMPORARY",
+    "INTERN",
+    "VOLUNTEER",
+    "PER_DIEM",
+    "OTHER"
+   ],
+   "type": "array"
+  },
+  "aiExperienceLevelFilter": {
+   "enum": [
+    "0-2",
+    "2-5",
+    "5-10",
+    "10+"
+   ],
+   "type": "array"
+  },
+  "aiHasSalary": {
+   "type": "boolean"
+  },
+  "aiLanguageFilter": {
+   "type": "array"
+  },
+  "aiTaxonomiesExclusionFilter": {
+   "enum": [
+    "Technology",
+    "Healthcare",
+    "Management & Leadership",
+    "Finance & Accounting",
+    "Human Resources",
+    "Sales",
+    "Marketing",
+    "Customer Service & Support",
+    "Education",
+    "Legal",
+    "Engineering",
+    "Science & Research",
+    "Trades",
+    "Construction",
+    "Manufacturing",
+    "Logistics",
+    "Creative & Media",
+    "Hospitality",
+    "Environmental & Sustainability",
+    "Retail",
+    "Data & Analytics",
+    "Software",
+    "Energy",
+    "Agriculture",
+    "Social Services",
+    "Administrative",
+    "Government & Public Sector",
+    "Art & Design",
+    "Food & Beverage",
+    "Transportation",
+    "Consulting",
+    "Sports & Recreation",
+    "Security & Safety"
+   ],
+   "type": "array"
+  },
+  "aiTaxonomiesFilter": {
+   "enum": [
+    "Technology",
+    "Healthcare",
+    "Management & Leadership",
+    "Finance & Accounting",
+    "Human Resources",
+    "Sales",
+    "Marketing",
+    "Customer Service & Support",
+    "Education",
+    "Legal",
+    "Engineering",
+    "Science & Research",
+    "Trades",
+    "Construction",
+    "Manufacturing",
+    "Logistics",
+    "Creative & Media",
+    "Hospitality",
+    "Environmental & Sustainability",
+    "Retail",
+    "Data & Analytics",
+    "Software",
+    "Energy",
+    "Agriculture",
+    "Social Services",
+    "Administrative",
+    "Government & Public Sector",
+    "Art & Design",
+    "Food & Beverage",
+    "Transportation",
+    "Consulting",
+    "Sports & Recreation",
+    "Security & Safety"
+   ],
+   "type": "array"
+  },
+  "aiTaxonomiesPrimaryFilter": {
+   "enum": [
+    "Technology",
+    "Healthcare",
+    "Management & Leadership",
+    "Finance & Accounting",
+    "Human Resources",
+    "Sales",
+    "Marketing",
+    "Customer Service & Support",
+    "Education",
+    "Legal",
+    "Engineering",
+    "Science & Research",
+    "Trades",
+    "Construction",
+    "Manufacturing",
+    "Logistics",
+    "Creative & Media",
+    "Hospitality",
+    "Environmental & Sustainability",
+    "Retail",
+    "Data & Analytics",
+    "Software",
+    "Energy",
+    "Agriculture",
+    "Social Services",
+    "Administrative",
+    "Government & Public Sector",
+    "Art & Design",
+    "Food & Beverage",
+    "Transportation",
+    "Consulting",
+    "Sports & Recreation",
+    "Security & Safety"
+   ],
+   "type": "array"
+  },
+  "aiVisaSponsorshipFilter": {
+   "type": "boolean"
+  },
+  "aiWorkArrangementFilter": {
+   "enum": [
+    "On-site",
+    "Hybrid",
+    "Remote OK",
+    "Remote Solely"
+   ],
+   "type": "array"
+  },
+  "datePostedAfter": {
+   "type": "string"
+  },
+  "descriptionExclusionSearch": {
+   "type": "array"
+  },
+  "descriptionSearch": {
+   "type": "array"
+  },
+  "descriptionType": {
+   "enum": [
+    "text",
+    "html"
+   ],
+   "type": "string"
+  },
+  "directApply": {
+   "type": "boolean"
+  },
+  "excludeATSDuplicate": {
+   "type": "boolean"
+  },
+  "hasNoLocation": {
+   "type": "boolean"
+  },
+  "hasSalary": {
+   "type": "boolean"
+  },
+  "industryExclusionFilter": {
+   "type": "array"
+  },
+  "industryFilter": {
+   "type": "array"
+  },
+  "limit": {
+   "maximum": 5000,
+   "minimum": 10,
+   "type": "integer"
+  },
+  "locationExclusionSearch": {
+   "type": "array"
+  },
+  "locationSearch": {
+   "type": "array"
+  },
+  "noDirectApply": {
+   "type": "boolean"
+  },
+  "organizationEmployeesGte": {
+   "minimum": 0,
+   "type": "integer"
+  },
+  "organizationEmployeesLte": {
+   "minimum": 0,
+   "type": "integer"
+  },
+  "organizationExclusionSearch": {
+   "type": "array"
+  },
+  "organizationSearch": {
+   "type": "array"
+  },
+  "organizationSizeFilter": {
+   "enum": [
+    "1",
+    "2-10",
+    "11-50",
+    "51-200",
+    "201-500",
+    "501-1000",
+    "1001-5000",
+    "5001-10000",
+    "10001+"
+   ],
+   "type": "array"
+  },
+  "organizationSlugExclusionFilter": {
+   "type": "array"
+  },
+  "organizationSlugFilter": {
+   "type": "array"
+  },
+  "populateAiRemoteLocation": {
+   "type": "boolean"
+  },
+  "populateAiRemoteLocationDerived": {
+   "type": "boolean"
+  },
+  "recruiterOnly": {
+   "type": "boolean"
+  },
+  "remote": {
+   "type": "boolean"
+  },
+  "removeAgency": {
+   "type": "boolean"
+  },
+  "seniorityFilter": {
+   "enum": [
+    "Associate",
+    "Director",
+    "Executive",
+    "Mid-Senior level",
+    "Entry level",
+    "Not Applicable",
+    "Internship"
+   ],
+   "type": "array"
+  },
+  "timeRange": {
+   "enum": [
+    "1h",
+    "24h",
+    "7d",
+    "6m"
+   ],
+   "type": "string"
+  },
+  "titleExclusionSearch": {
+   "type": "array"
+  },
+  "titleSearch": {
+   "type": "array"
+  }
+ },
+ "harvestapi/linkedin-company-employees": {
+  "companies": {
+   "type": "array"
+  },
+  "companyBatchMode": {
+   "enum": [
+    "all_at_once",
+    "one_by_one"
+   ],
+   "type": "string"
+  },
+  "companyHeadcount": {
+   "enum": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I"
+   ],
+   "type": "array"
+  },
+  "excludeCurrentJobTitles": {
+   "type": "array"
+  },
+  "excludeFunctionIds": {
+   "enum": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26"
+   ],
+   "type": "array"
+  },
+  "excludeIndustryIds": {
+   "type": "array"
+  },
+  "excludeLocations": {
+   "type": "array"
+  },
+  "excludePastCompanies": {
+   "type": "array"
+  },
+  "excludePastJobTitles": {
+   "type": "array"
+  },
+  "excludeSchools": {
+   "type": "array"
+  },
+  "excludeSeniorityLevelIds": {
+   "enum": [
+    "100",
+    "110",
+    "120",
+    "130",
+    "200",
+    "210",
+    "220",
+    "300",
+    "310",
+    "320"
+   ],
+   "type": "array"
+  },
+  "functionIds": {
+   "enum": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26"
+   ],
+   "type": "array"
+  },
+  "industryIds": {
+   "type": "array"
+  },
+  "jobTitles": {
+   "type": "array"
+  },
+  "locations": {
+   "type": "array"
+  },
+  "maxItems": {
+   "type": "integer"
+  },
+  "maxItemsPerCompany": {
+   "type": "integer"
+  },
+  "pastJobTitles": {
+   "type": "array"
+  },
+  "profileScraperMode": {
+   "enum": [
+    "Short ($4 per 1k)",
+    "Full ($8 per 1k)",
+    "Full + email search ($12 per 1k)"
+   ],
+   "type": "string"
+  },
+  "recentlyChangedJobs": {
+   "type": "boolean"
+  },
+  "schools": {
+   "type": "array"
+  },
+  "searchQuery": {
+   "type": "string"
+  },
+  "seniorityLevelIds": {
+   "enum": [
+    "100",
+    "110",
+    "120",
+    "130",
+    "200",
+    "210",
+    "220",
+    "300",
+    "310",
+    "320"
+   ],
+   "type": "array"
+  },
+  "startPage": {
+   "maximum": 100,
+   "minimum": 0,
+   "type": "integer"
+  },
+  "takePages": {
+   "maximum": 100,
+   "minimum": 0,
+   "type": "integer"
+  },
+  "yearsAtCurrentCompanyIds": {
+   "enum": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "type": "array"
+  },
+  "yearsOfExperienceIds": {
+   "enum": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "type": "array"
+  }
+ }
+}

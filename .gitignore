@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+.DS_Store
+evals/results/
+# never commit a real workspace or secrets (a workspace belongs in its own private folder)
+.env
+/jobpilot.toml
+/data/
+/.jobpilot/
+/tailored/
+/reports/
+/profile/
