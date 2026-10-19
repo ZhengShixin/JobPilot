@@ -209,7 +209,7 @@ jobpilot net due [-h] [--json]
 
 ### `jobpilot inbox`
 
-Gmail progress tracking: brief, apply, link, unmatched, status, scan.
+Gmail progress tracking: brief, apply, link, unmatched, waiting, status, scan.
 
 ```text
 jobpilot inbox brief [-h] [--json]
@@ -217,6 +217,9 @@ jobpilot inbox apply [-h] [--json] file
 jobpilot inbox link [-h] [--json] message_id app_id
 jobpilot inbox dismiss [-h] [--json] message_id
 jobpilot inbox unmatched [-h] [--json]
+jobpilot inbox waiting [-h] [--json]
+jobpilot inbox answered [-h] [--json] app_id
+jobpilot inbox invite [-h] [--json] app_id
 jobpilot inbox status [-h] [--json]
 jobpilot inbox scan [-h] [--json] [--model MODEL]
 ```

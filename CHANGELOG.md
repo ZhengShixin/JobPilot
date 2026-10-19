@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 — unreleased
+
+- Recruiter mail that asks you something is an action item: it shows in Activity (with a Gmail link) and as the
+  first group of Today's Up next until the application moves on or you mark it answered, and one click records it
+  as an interview invitation (`jobpilot inbox waiting|answered|invite`). A phone screen or an introductory call a
+  recruiter asks to schedule now counts as an interview invitation.
+
+### Fixed
+
+- The dashboard's pause banner named `jobpilot resume` (the resume tools); paid runs come back with
+  `jobpilot unpause`.
+
 ## 0.1.0 — 2026-10-19
 
 First public release.

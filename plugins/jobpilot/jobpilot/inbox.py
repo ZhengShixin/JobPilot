@@ -7,6 +7,9 @@ Read-only by design: nothing here labels, archives, sends, drafts or deletes mai
                          already processed, ready-made Gmail queries and the results schema
     apply(ws, results)   the skill's classified messages -> checked -> ledger events (source "gmail", message id)
     link(ws, msg, app)   an unmatched email recorded against an application by hand
+    waiting(ws)          recruiter mail that asks you to act and is still unanswered (the dashboard's Up next);
+                         answered(ws, app) stops the reminder, invite(ws, app) records the mail as an interview
+                         invitation
     scan_headless(ws)    experimental: the same triage as one `claude -p` run with the claude.ai Gmail connector
 
 The session reads the mail with your own Gmail connector; the code then refuses anything it cannot check: an unknown
@@ -14,6 +17,7 @@ category, a duplicate message, an application that does not exist, or progress o
 (recorded as a note instead, so you can reopen it yourself).
 """
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -23,16 +27,18 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from . import claude, ledger, schema as S, util
+from . import claude, config, ledger, schema as S, util
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 CATEGORIES = {
     "receipt": "the employer confirms it received the application",
     "rejection": "the employer declines or closes the candidacy",
     "oa_invite": "an online assessment, coding test, recorded video interview or take-home task",
-    "interview_invite": "an invitation to interview or to give availability for one",
+    "interview_invite": "an invitation to interview or to give availability for one, including a phone screen or an "
+                        "introductory call a recruiter or hiring manager asks to schedule",
     "offer": "an offer of employment",
-    "recruiter_reply": "a person writes personally about the candidacy",
+    "recruiter_reply": "a person writes personally about the candidacy without inviting the candidate to a call or an "
+                       "interview (a question, a follow-up, information)",
     "other": "job alerts, newsletters, marketing, verification codes, everything else",
 }
 # Emails that prove an application was sent (a planned application then counts as applied on that date).
@@ -46,6 +52,20 @@ ATS_DOMAINS = ("greenhouse.io", "greenhouse-mail.io", "lever.co", "myworkday.com
                "pymetrics.ai", "testgorilla.com")
 SUBJECT_WORDS = ("application", "applying", "interview", "assessment", "\"coding challenge\"", "\"next steps\"",
                  "candidacy", "offer", "\"your interest\"")
+# A stage after a recruiter's mail answers it: the mail no longer waits in Up next.
+SETTLED = ("oa_invited", "interview_invited", "interview_scheduled", "interview_done", "offer", "rejected", "withdrawn",
+           "closed")
+# Categories that become their own line in the activity feed (receipts only count in the scan's summary line).
+NEWS = ("recruiter_reply", "interview_invite", "oa_invite", "offer", "rejection")
+NEWS_TEXT = {
+    "en": {"recruiter_reply": "a recruiter wrote", "interview_invite": "interview invitation by email",
+           "oa_invite": "assessment invitation by email", "offer": "offer by email", "rejection": "rejection by email",
+           "reply": " — needs your reply", "due": ", due %s", "answered": "recruiter mail marked answered"},
+    "zh": {"recruiter_reply": "招聘方来信", "interview_invite": "邮件里的面试邀请", "oa_invite": "邮件里的测评邀请",
+           "offer": "邮件里的 offer", "rejection": "拒信", "reply": "，等你回复", "due": "，%s 截止",
+           "answered": "招聘方来信已处理"},
+}
+GMAIL_ID = re.compile(r"^[0-9a-f]{12,20}$")
 GMAIL_READ = ("mcp__claude_ai_Gmail__search_threads", "mcp__claude_ai_Gmail__get_thread",
               "mcp__claude_ai_Gmail__get_message", "mcp__claude_ai_Gmail__list_labels")
 GMAIL_WRITE = tuple("mcp__claude_ai_Gmail__" + t for t in (
@@ -87,7 +107,18 @@ def _seen(ws):
 def status(ws):
     st = _state(ws)
     return {"last_scan": st.get("last_scan"), "covered_until": st.get("covered_until"),
-            "messages_recorded": int(st.get("messages_recorded") or 0), "unmatched": len(unmatched(ws))}
+            "messages_recorded": int(st.get("messages_recorded") or 0), "unmatched": len(unmatched(ws)),
+            "waiting": len(waiting(ws))}
+
+
+def _done(ws):
+    return util.read_json(_dir(ws) / "mail-done.json", {}) or {}
+
+
+def gmail_link(message_id):
+    """The Gmail web link of a message (Gmail API ids are 12-20 hex digits), or None."""
+    mid = str(message_id or "")
+    return "https://mail.google.com/mail/u/0/#all/%s" % mid if GMAIL_ID.match(mid) else None
 
 
 def unmatched(ws):
@@ -242,7 +273,8 @@ def apply(ws, results):
     if not util.parse_time(results["covered_until"]):
         raise util.JobPilotError("covered_until %r is not an ISO time" % results["covered_until"])
     summary = {"messages": len(results["messages"]), "recorded": 0, "events": [], "ignored": 0, "duplicates": 0,
-               "unmatched": 0, "attention": [], "problems": list(results.get("problems") or [])}
+               "unmatched": 0, "attention": [], "reply_needed": [], "problems": list(results.get("problems") or [])}
+    news = []
     with ws.lock("inbox"):
         seen = _seen(ws)
         now = util.stamp(ws.now())
@@ -271,8 +303,11 @@ def apply(ws, results):
             if attention:
                 summary["attention"].append(attention)
             seen[mid] = {"at": now, "outcome": "recorded" if events else "duplicate_outcome", "app_id": st["id"],
-                         "category": m["category"]}
+                         "category": m["category"], "received_at": m["received_at"], "thread_id": m.get("thread_id"),
+                         "action_required": bool(m.get("action_required"))}
             summary["recorded"] += bool(events)
+            if events and m["category"] in NEWS:
+                news.append((st, m))
         util.atomic_write_json(_dir(ws) / "seen.json", seen, mode=0o600)
         st = _state(ws)
         covered = max(filter(None, [util.parse_time(st.get("covered_until")), util.parse_time(results["covered_until"])]))
@@ -280,10 +315,118 @@ def apply(ws, results):
                   messages_recorded=int(st.get("messages_recorded") or 0) + summary["recorded"],
                   last_complete=bool(results.get("complete")))
         util.atomic_write_json(_dir(ws) / "state.json", st, mode=0o600)
+    for st, m in news:
+        _news(ws, st, m)
+        if m["category"] == "recruiter_reply" and m.get("action_required"):
+            summary["reply_needed"].append({"app_id": st["id"], "company": st["company"], "subject": m.get("subject")})
     if summary["recorded"] or summary["unmatched"]:
-        ws.event("inbox", "inbox: %d updates recorded, %d emails unmatched" % (summary["recorded"], summary["unmatched"]),
-                 recorded=summary["recorded"], unmatched=summary["unmatched"])
+        ws.event("inbox", "inbox: %d update%s recorded, %d email%s unmatched" % (
+            summary["recorded"], "" if summary["recorded"] == 1 else "s", summary["unmatched"],
+            "" if summary["unmatched"] == 1 else "s"), recorded=summary["recorded"], unmatched=summary["unmatched"])
     return summary
+
+
+def _news(ws, st, m):
+    """One activity-feed line for a notable email (the dashboard links it to Gmail)."""
+    t = NEWS_TEXT[config.language(ws.cfg)]
+    cat = m["category"]
+    ask = cat == "recruiter_reply" and bool(m.get("action_required"))
+    text = "%s %s: %s" % (st["id"], st["company"], t[cat])
+    if ask:
+        text += t["reply"]
+    if cat == "oa_invite" and m.get("deadline"):
+        text += t["due"] % str(m["deadline"])[:10]
+    ws.event("inbox", text, app_id=st["id"], message_id=m["message_id"], thread_id=m.get("thread_id") or None,
+             category=cat, needs_reply=ask)
+
+
+# ---------------------------------------------------------------- recruiter mail waiting for an answer
+
+def _waiting_mails(ws, days):
+    """{app id: [(ledger event, seen entry)]} of recruiter mails that ask the candidate to act, oldest first, with no
+    later stage on the application and not marked answered."""
+    seen, done = _seen(ws), _done(ws)
+    cutoff = ws.now() - timedelta(days=days)
+    out = {}
+    for e in ledger.events(ws):
+        app = e.get("app_id")
+        if e.get("event") in SETTLED:
+            out.pop(app, None)
+            continue
+        if e.get("event") != "recruiter_reply" or e.get("source") != "gmail":
+            continue
+        mid = e.get("message_id")
+        info = seen.get(mid) or {}
+        if not mid or mid in done or not info.get("action_required"):
+            continue
+        when = util.parse_time(info.get("received_at") or e.get("ts"))
+        if when and when < cutoff:
+            continue
+        out.setdefault(app, []).append((e, info))
+    return out
+
+
+def waiting(ws, days=30):
+    """Recruiter mail that asks you to act (a question, a request) and is still unanswered, newest first: one row per
+    application with its newest such mail. A mail leaves the list when the application moves on (an assessment, an
+    interview, an offer, its end), when you mark it answered, or after `days`."""
+    states = ledger.states(ws)
+    out = []
+    for app, mails in _waiting_mails(ws, days).items():
+        st = states.get(app)
+        if not st or st["voided"] or st["closed"]:
+            continue
+        e, info = mails[-1]
+        out.append({"app_id": app, "company": st["company"], "role": st["role"], "stage": st["stage"],
+                    "track": st.get("track"), "message_id": e.get("message_id"), "thread_id": info.get("thread_id"),
+                    "received_at": info.get("received_at") or e.get("ts"), "subject": e.get("note") or "",
+                    "count": len(mails), "can_invite": st["stage"] in ("planned", "applied", "oa"),
+                    "mail": gmail_link(e.get("message_id"))})
+    out.sort(key=lambda r: str(r["received_at"] or ""), reverse=True)
+    return out
+
+
+def answered(ws, app_id, by="user"):
+    """You answered the recruiter (or there is nothing to answer): the application's mails stop waiting."""
+    app_id = str(app_id or "").upper()
+    mails = _waiting_mails(ws, 3650).get(app_id) or []
+    if not mails:
+        return {"app_id": app_id, "answered": 0}
+    with ws.lock("inbox"):
+        done = _done(ws)
+        done.update({e["message_id"]: util.stamp(ws.now()) for e, _ in mails})
+        util.atomic_write_json(_dir(ws) / "mail-done.json", done, mode=0o600)
+    st = ledger.state(ws, app_id) or {}
+    ws.event("inbox", "%s %s: %s" % (app_id, st.get("company") or "", NEWS_TEXT[config.language(ws.cfg)]["answered"]),
+             app_id=app_id, by=by)
+    return {"app_id": app_id, "answered": len(mails)}
+
+
+def invite(ws, app_id, by="user"):
+    """Record a waiting recruiter mail (a call or an interview the classifier filed as a plain reply) as an interview
+    invitation on its application, with the email as the source."""
+    app_id = str(app_id or "").upper()
+    st = ledger.state(ws, app_id)
+    if not st or st["voided"]:
+        raise util.JobPilotError("no application %s" % app_id)
+    mails = _waiting_mails(ws, 3650).get(app_id) or []
+    if not mails:
+        raise util.JobPilotError("%s has no recruiter mail waiting for an answer" % app_id)
+    if st["closed"]:
+        raise util.JobPilotError("%s is closed; reopen it first" % app_id)
+    if st["stage"] not in ("planned", "applied", "oa"):
+        return {"app_id": app_id, "events": []}
+    e, info = mails[-1]
+    base = {"source": "gmail", "message_id": e["message_id"], "by": by,
+            "date": _day(ws, info.get("received_at") or e.get("ts"))}
+    events = []
+    if st["stage"] == "planned":
+        ledger.record(ws, app_id, "applied", note="inferred from an email (interview_invite)", **base)
+        events.append("applied")
+    ledger.record(ws, app_id, "interview_invited", note="recorded from a recruiter's email", **base)
+    events.append("interview_invited")
+    ws.event("app", "%s interview_invited: %s — %s" % (app_id, st["company"], st["role"]), app_id=app_id)
+    return {"app_id": app_id, "events": events}
 
 
 def link(ws, message_id, app_id):
@@ -381,12 +524,25 @@ def cmd_inbox(ws, args):
         res = apply(ws, json.loads(text))
         return out(args, res, "%(recorded)d emails recorded, %(unmatched)d unmatched, %(duplicates)d already known, "
                               "%(ignored)d not about applications" % res +
-                   "".join("\n! " + x for x in res["attention"]))
+                   "".join("\n! " + x for x in res["attention"]) +
+                   "".join("\n> %(app_id)s %(company)s: a recruiter wrote and waits for your reply" % x
+                           for x in res["reply_needed"]))
     if a == "link":
         res = link(ws, args.message_id, args.app_id)
         return out(args, res, "%s: %s" % (res["app_id"], ", ".join(res["events"]) or "nothing new"))
     if a == "dismiss":
         return out(args, dismiss(ws, args.message_id), "dismissed")
+    if a == "waiting":
+        rows = waiting(ws)
+        return out(args, rows, "\n".join("%s %-24s %s  %s" % (r["app_id"], util.clip(r["company"], 24),
+                                                              str(r["received_at"])[:10], util.clip(r["subject"], 60))
+                                         for r in rows) or "no recruiter mail waiting for an answer")
+    if a == "answered":
+        res = answered(ws, args.app_id)
+        return out(args, res, "%s: %d email(s) marked answered" % (res["app_id"], res["answered"]))
+    if a == "invite":
+        res = invite(ws, args.app_id)
+        return out(args, res, "%s: %s" % (res["app_id"], ", ".join(res["events"]) or "already past the invitation"))
     if a == "status":
         st = status(ws)
         return out(args, st, "last scan %s, covered until %s, %d recorded, %d unmatched" % (
@@ -402,7 +558,7 @@ def cmd_inbox(ws, args):
 
 
 def register(sub, add):
-    sp = add("inbox", cmd_inbox, help="Gmail progress tracking: brief, apply, link, unmatched, status, scan")
+    sp = add("inbox", cmd_inbox, help="Gmail progress tracking: brief, apply, link, unmatched, waiting, status, scan")
     isub = sp.add_subparsers(dest="inbox_action", required=True)
 
     def q(name, **kw):
@@ -419,6 +575,11 @@ def register(sub, add):
     p = q("dismiss", help="drop an unmatched email from the list")
     p.add_argument("message_id")
     q("unmatched", help="job emails that matched no application")
+    q("waiting", help="recruiter mail that asks you to act and is still unanswered")
+    p = q("answered", help="you answered an application's recruiter mail: stop reminding")
+    p.add_argument("app_id")
+    p = q("invite", help="record an application's waiting recruiter mail as an interview invitation")
+    p.add_argument("app_id")
     q("status", help="last scan and coverage")
     p = q("scan", help="experimental: scan Gmail headless through the claude.ai Gmail connector")
     p.add_argument("--model", default="sonnet")

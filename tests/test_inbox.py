@@ -137,6 +137,53 @@ class Inbox(support.EnvCase):
         inbox.apply(self.ws, results(msg("y1", "rejection", self.acme, snippet="Unfortunately we will not proceed.")))
         self.assertEqual(ledger.state(self.ws, self.acme)["stage"], "rejected")
 
+    def test_recruiter_mail_waits_until_answered_or_settled(self):
+        inbox.apply(self.ws, results(
+            msg("q1", "recruiter_reply", self.acme, subject="A question about your application",
+                snippet="Could you tell me which of our two teams interests you more?", action=True),
+            msg("q2", "recruiter_reply", self.acme, snippet="Thanks, I will pass your resume on.",
+                received="2026-10-18T15:00:00Z")))
+        rows = inbox.waiting(self.ws)
+        self.assertEqual([(r["app_id"], r["message_id"], r["count"]) for r in rows], [(self.acme, "q1", 1)])
+        self.assertEqual(rows[0]["subject"], "A question about your application")
+        self.assertTrue(rows[0]["can_invite"])
+        self.assertIsNone(rows[0]["mail"])                      # not a Gmail message id: no link
+        feed = [e for e in util.jsonl_read(self.ws.events_path) if (e.get("data") or {}).get("message_id") == "q1"]
+        self.assertTrue(feed[0]["data"]["needs_reply"])
+        self.assertIn("a recruiter wrote — needs your reply", feed[0]["text"])
+        self.assertEqual(inbox.status(self.ws)["waiting"], 1)
+        self.assertEqual(inbox.answered(self.ws, self.acme)["answered"], 1)
+        self.assertEqual(inbox.waiting(self.ws), [])
+        self.assertIn("q1", util.read_json(self.ws.inbox / "mail-done.json"))
+        inbox.apply(self.ws, results(msg("q3", "recruiter_reply", self.acme, received="2026-10-19T10:00:00Z",
+                                         snippet="One more question: are you open to a hybrid schedule?", action=True)))
+        self.assertEqual([r["message_id"] for r in inbox.waiting(self.ws)], ["q3"])
+        ledger.record(self.ws, self.acme, "rejected")             # a later stage answers it too
+        self.assertEqual(inbox.waiting(self.ws), [])
+        self.assertEqual(inbox.waiting(self.ws, days=0), [])
+
+    def test_waiting_mail_recorded_as_an_interview_invitation(self):
+        gmail_id = "1a2b3c4d5e6f7a8b"
+        inbox.apply(self.ws, results(msg(gmail_id, "recruiter_reply", self.north, action=True,
+                                         snippet="Could we find a time to talk about the role?")))
+        rows = inbox.waiting(self.ws)
+        self.assertEqual(rows[0]["mail"], "https://mail.google.com/mail/u/0/#all/" + gmail_id)
+        out = inbox.invite(self.ws, self.north, by="dashboard")
+        self.assertEqual(out["events"], ["applied", "interview_invited"])    # it was only saved before
+        st = ledger.state(self.ws, self.north)
+        self.assertEqual((st["stage"], st["applied_date"]), ("interview", "2026-10-18"))
+        ev = ledger.events(self.ws, self.north)[-1]
+        self.assertEqual((ev["event"], ev["source"], ev["message_id"], ev["by"]),
+                         ("interview_invited", "gmail", gmail_id, "dashboard"))
+        self.assertEqual(inbox.waiting(self.ws), [])
+        with self.assertRaises(util.JobPilotError):
+            inbox.invite(self.ws, self.north)                     # nothing waits any more
+
+    def test_categories_name_calls_as_invitations(self):
+        cats = inbox.brief(self.ws)["categories"]
+        self.assertIn("introductory call", cats["interview_invite"])
+        self.assertIn("without inviting", cats["recruiter_reply"])
+
     def test_invalid_results_record_nothing(self):
         bad = results(msg("z1", "receipt", self.acme))
         bad["messages"][0]["category"] = "celebration"

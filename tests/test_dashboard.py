@@ -193,6 +193,22 @@ class DashboardTest(unittest.TestCase):
         self.assertEqual(res["app"]["stage"], "planned")
         self.assertFalse((res["app"]["url"] or "").startswith("javascript"))
 
+    def test_recruiter_mail_waits_in_up_next(self):
+        m = next(r for r in self.get("/api/summary")["mail"] if r["company"] == "Aurora Climate")
+        self.assertEqual((m["mail"], m["mail_hidden"]), (None, True))        # the demo's mail is fictional
+        apps = self.get("/api/apps")["apps"]
+        self.assertTrue(next(a for a in apps if a["id"] == m["app_id"])["mail_waiting"])
+        self.assertEqual(self.get("/api/app?id=" + m["app_id"])["mail"][0]["message_id"], m["message_id"])
+        feed = self.get("/api/events?n=300")
+        self.assertTrue(any(e["data"].get("message_id") == m["message_id"] and e["data"].get("needs_reply")
+                            and e["data"].get("mail_hidden") for e in feed))
+        status, res = self.post("inbox/invite", {"app_id": m["app_id"]})
+        self.assertEqual(status, 200, res)
+        self.assertEqual(res["app"]["stage"], "interview")
+        self.assertFalse(any(r["app_id"] == m["app_id"] for r in self.get("/api/summary")["mail"]))
+        status, res = self.post("inbox/answered", {"app_id": m["app_id"]})
+        self.assertEqual((status, res["answered"]), (200, 0))
+
     def test_demo_turns_paid_tasks_off(self):
         for name, body in (("run/daily", {}), ("tailor/start", {"posting_id": self.ready_ids(1)[0]}),
                            ("net/find", {"company": "Atlas Mapping"}), ("net/cards", {"company": "Atlas Mapping"})):

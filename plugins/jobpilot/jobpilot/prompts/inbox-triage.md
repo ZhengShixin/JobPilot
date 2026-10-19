@@ -25,9 +25,12 @@ discarded.
    - `receipt`: the employer confirms it received the application.
    - `rejection`: the employer declines or closes the candidacy.
    - `oa_invite`: an invitation to an online assessment, coding test, recorded video interview or take-home task.
-   - `interview_invite`: an invitation to interview or to give availability for one.
+   - `interview_invite`: an invitation to interview or to give availability for one, including a phone screen or an
+     introductory call a recruiter or hiring manager asks to schedule about the application (for example "I'd like to
+     set up a quick call this week").
    - `offer`: an offer of employment.
-   - `recruiter_reply`: a person (recruiter, hiring manager, employee) writes personally about the candidacy.
+   - `recruiter_reply`: a person (recruiter, hiring manager, employee) writes personally about the candidacy without
+     inviting the candidate to a call or an interview (a question, a follow-up, information).
    - `other`: job alerts, newsletters, marketing, verification codes and everything else.
 4. `app_id`: the application from `apps` the message is about (company names, aliases, the careers host, role words).
    Use null when unsure, and never guess between two applications at the same employer; then fill `company` with the
@@ -36,7 +39,8 @@ discarded.
    category (for example "Unfortunately, we will not be moving forward"). Do not paraphrase, translate or fix typos.
 6. `deadline`: only for an explicit deadline (ISO 8601; a date alone if no time is given). For a relative deadline
    ("within 5 days of receiving this email") compute it from `received_at`. Otherwise null. `interview_time`: an
-   explicitly confirmed interview time, otherwise null. `action_required`: true if the candidate must do something.
+   explicitly confirmed interview time, otherwise null. `action_required`: true if the candidate must do something
+   (answer a question, send availability, complete a task).
 7. Work oldest first. If you run low on turns, stop and report `complete: false` with `covered_until` set to the
    received time of the last message you finished; otherwise `complete: true` and `covered_until` = the window's end.
 8. `problems`: short notes about tool errors, rate limits or ambiguous matches. No email content.

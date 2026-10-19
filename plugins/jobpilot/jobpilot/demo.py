@@ -796,6 +796,36 @@ def _applications(d):
                 ws.event("app", "%s %s: %s — %s" % (app_id, _event_word(d, event), company, title), app_id=app_id)
 
 
+def _inbox(d):
+    """Gmail tracking the way /jobpilot:inbox records it: fictional emails, checked and recorded by inbox.apply."""
+    try:
+        from . import inbox
+    except ImportError:
+        return
+    ws = d.ws
+    ids = {st["company"]: st["id"] for st in ledger.states(ws).values()}
+    batches = {}
+
+    def mail(n, company, category, ago, hour, subject, snippet, sender, **extra):
+        when = d.day(ago, hour, 20)
+        msg = {"message_id": "19%014x" % (0x2a1b3c4d5e6f00 + n), "thread_id": "19%014x" % (0x2a1b3c4d5e0000 + n),
+               "received_at": util.stamp(when), "sender": sender, "subject": subject, "snippet": snippet,
+               "category": category, "app_id": ids[company], "company": company, "deadline": None,
+               "interview_time": None, "action_required": False}
+        msg.update(extra)
+        batches.setdefault(ago, []).append(msg)
+
+    mail(1, "Aurora Climate", "recruiter_reply", 1, 16, "Quick question about your application",
+         "Before I share your resume with the hiring manager, could you tell me which of our two science teams "
+         "interests you more?", "Dana Whitfield <dana.whitfield@aurora-climate.example>", action_required=True)
+    for ago in sorted(batches, reverse=True):
+        msgs = sorted(batches[ago], key=lambda m: m["received_at"])
+        at = util.parse_time(msgs[-1]["received_at"]) + timedelta(minutes=25)
+        with _at(min(at, d.now - timedelta(minutes=5))):
+            inbox.apply(ws, {"messages": msgs, "covered_until": util.stamp(ws.now()), "complete": True,
+                             "problems": []})
+
+
 def _event_word(d, event):
     zh = {"applied": "已投递", "receipt": "已收到确认", "oa_invited": "收到测评", "oa_done": "完成测评",
           "interview_invited": "收到面试邀请", "interview_scheduled": "约定面试", "interview_done": "完成面试",
@@ -1119,6 +1149,7 @@ def create(target, lang="en", force=False):
     d = Demo(ws, lang)
     _postings(d)
     _applications(d)
+    _inbox(d)
     d.save_rows()
     _runs(d)
     _referrals(d)

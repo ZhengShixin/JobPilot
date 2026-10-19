@@ -178,6 +178,15 @@ main{max-width:1240px;margin:0 auto;padding:22px 24px 40px}
 .due-kind{font-size:11.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .due-t{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .due-s{font-size:12.5px;color:var(--ink-2)}
+.due-q{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.due-h{font-size:11.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:2px 6px 4px}
+.due-group+.due-group{margin-top:14px}
+.mail-item{display:grid;gap:2px;padding-bottom:8px}
+.mail-item+.mail-item{border-top:1px solid var(--grid);padding-top:6px}
+.mail-acts{display:flex;flex-wrap:wrap;gap:6px;padding-left:70px}
+.datebox.mail{background:var(--accent-soft)}.datebox.mail .icon{color:var(--accent)}
+.btn[data-armed="1"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.ev .tx a{font-size:12.5px;margin-left:6px;white-space:nowrap}
 .empty{padding:22px 12px;text-align:center;color:var(--muted);font-size:13px}
 .empty .t{color:var(--ink);font-weight:600;font-size:14px;margin-bottom:4px}
 .empty svg{width:28px;height:28px;color:var(--faint);margin-bottom:6px}
@@ -446,6 +455,7 @@ code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);paddin
   .tbl tbody tr:hover td{background:none}
   .comp-h{grid-template-columns:84px minmax(0,1fr) 52px}
   .comp .why,.comp .quote{padding-left:0}
+  .mail-acts{padding-left:0}
   .d-head,.d-body,.d-foot{padding-left:16px;padding-right:16px}
   .btn-run .lbl{display:none}
 }
@@ -514,7 +524,12 @@ en: {
   n_new:'{n} new today', n_ready:'{n} ready',
   empty_matches_t:'No matches waiting', empty_matches:'New postings arrive with the next daily search.',
   up_next:'Up next', due_oa:'Assessment due', due_iv:'Interview', due_fu:'Follow up', fu_days:'Applied {n} days ago, no reply yet',
-  overdue:'overdue', nothing_due_t:'Nothing due this week', nothing_due:'Deadlines, interviews and follow-ups show up here.',
+  overdue:'overdue', nothing_due_t:'Nothing due this week', nothing_due:'Recruiter mail, deadlines, interviews and follow-ups show up here.',
+  mail_wait:'Recruiter mail waiting for your reply', due_sched:'Deadlines and interviews',
+  mail_got:'received {when}', mail_n:'{n} emails', open_mail:'Open email',
+  mail_invite:'Record as interview invite', mail_done:'Replied — stop reminding', mail_hidden:'Email links are hidden in the demo.',
+  mail_invited:'Recorded as an interview invitation', mail_answered:'Marked as answered', next_mail:'Reply to recruiter',
+  confirm_q:'Click again to confirm',
   pipeline:'Pipeline', pipeline_sub:'Every application you have sent',
   f_applied:'Applied', f_responded:'Heard back', f_oa:'Assessment', f_interview:'Interview', f_offer:'Offer',
   per_day:'Matches per day', per_day_sub:'Postings admitted to the pool, last 7 days', chart:'Chart', table:'Table', total:'Total', day:'Day',
@@ -600,7 +615,12 @@ zh: {
   n_new:'今日新增 {n}', n_ready:'{n} 个可投',
   empty_matches_t:'暂时没有待投岗位', empty_matches:'下一次每日搜索会带来新岗位。',
   up_next:'接下来', due_oa:'测评截止', due_iv:'面试', due_fu:'跟进', fu_days:'投递 {n} 天，还没有回复',
-  overdue:'已逾期', nothing_due_t:'本周没有待办', nothing_due:'截止日期、面试和跟进提醒会出现在这里。',
+  overdue:'已逾期', nothing_due_t:'本周没有待办', nothing_due:'招聘方来信、截止日期、面试和跟进提醒会出现在这里。',
+  mail_wait:'招聘方来信：等你回复', due_sched:'截止与面试',
+  mail_got:'{when} 收到', mail_n:'共 {n} 封', open_mail:'打开邮件',
+  mail_invite:'记为面试邀请', mail_done:'已回复，不用再提醒', mail_hidden:'演示中隐藏了邮件链接。',
+  mail_invited:'已记为面试邀请', mail_answered:'已标记为回复过', next_mail:'回复招聘方',
+  confirm_q:'再点一次确认',
   pipeline:'投递漏斗', pipeline_sub:'你投出的每一份申请',
   f_applied:'已投递', f_responded:'有回音', f_oa:'测评', f_interview:'面试', f_offer:'Offer',
   per_day:'每日新匹配', per_day_sub:'近 7 天进入岗位库的岗位', chart:'图表', table:'表格', total:'合计', day:'日期',
@@ -967,6 +987,20 @@ function matchRow(r) {
   </button>`;
 }
 function emptyState(ic, title, text, extra) { return h`<div class="empty">${icon(ic)}<div class="t">${title}</div><div>${text}</div>${extra || ''}</div>`; }
+function mailActs(m) {
+  const open = m.mail ? h`<a class="btn btn-sm" href="${safeUrl(m.mail)}" target="_blank" rel="noopener noreferrer">${icon('mail', 'icon-sm')}${t('open_mail')}</a>`
+    : m.mail_hidden ? h`<button class="btn btn-sm" data-act="mail-hidden">${icon('mail', 'icon-sm')}${t('open_mail')}</button>` : '';
+  return h`${open}${m.can_invite ? h`<button class="btn btn-sm" data-act="mail-invite" data-id="${m.app_id}" data-confirm="1">${icon('calendar', 'icon-sm')}${t('mail_invite')}</button>` : ''}
+    <button class="btn btn-sm btn-ghost" data-act="mail-done" data-id="${m.app_id}">${icon('check', 'icon-sm')}${t('mail_done')}</button>`;
+}
+function mailItem(m) {
+  const kind = [t('mail_got', {when: dateShort(m.received_at)})].concat(m.count > 1 ? [t('mail_n', {n: m.count})] : []).join(' · ');
+  return h`<div class="mail-item"><button class="due-item" data-act="open-app" data-id="${m.app_id}">
+    <span class="datebox mail">${icon('mail')}</span>
+    <span><span class="due-kind">${kind}</span><span class="due-t">${m.company}</span><span class="due-s">${m.role}</span>
+      ${m.subject ? h`<span class="due-q">${m.subject}</span>` : ''}</span></button>
+    <div class="mail-acts">${mailActs(m)}</div></div>`;
+}
 function dueItem(kind, at, title, sub, appId, cls) {
   const d = parseT(at);
   const mo = d ? d.toLocaleDateString(locale(), {month: 'short'}) : '', dy = d ? d.getDate() : '';
@@ -985,6 +1019,7 @@ async function renderToday() {
   (due.interviews || []).filter(i => !i.past).forEach(i => dueRows.push(dueItem(t('due_iv'), i.time, i.company, i.role + ' · ' + timeShort(i.time), i.app_id, 'soon')));
   (due.deadlines || []).forEach(d => dueRows.push(dueItem(t('due_oa') + (d.overdue ? ' · ' + t('overdue') : ''), d.due, d.company, d.role, d.app_id, d.overdue ? 'over' : 'soon')));
   (due.followups || []).slice(0, 4).forEach(f => dueRows.push(dueItem(t('due_fu'), null, f.company, t('fu_days', {n: f.days}), f.app_id)));
+  const mails = sum.mail || [];
   const rep = sum.report;
   const fun = Object.assign({responded: k.responded}, sum.funnel || {});
   const anyMatches = tracks.some(tr => (tr.top || []).length);
@@ -1009,8 +1044,10 @@ async function renderToday() {
         <div class="matches">${(tr.top || []).slice(0, 3).map(matchRow)}</div>`) : emptyState('spark', t('empty_matches_t'), t('empty_matches'))}
     </div>
     <div class="stack">
-      <div class="card"><div class="card-h"><h2>${t('up_next')}</h2></div>
-        ${dueRows.length ? h`<div class="due">${dueRows}</div>` : emptyState('calendar', t('nothing_due_t'), t('nothing_due'))}</div>
+      <div class="card"><div class="card-h"><h2>${t('up_next')}</h2>${mails.length + dueRows.length ? h`<span class="badge">${mails.length + dueRows.length}</span>` : ''}</div>
+        ${mails.length ? h`<div class="due-group"><div class="due-h">${t('mail_wait')}</div>${mails.map(mailItem)}</div>` : ''}
+        ${dueRows.length ? h`<div class="due-group">${mails.length ? h`<div class="due-h">${t('due_sched')}</div>` : ''}<div class="due">${dueRows}</div></div>`
+          : mails.length ? '' : emptyState('calendar', t('nothing_due_t'), t('nothing_due'))}</div>
       ${chartCard('funnel', t('pipeline'), t('pipeline_sub'), funnelChart(fun), funnelTable(fun))}
       ${chartCard('daily', t('per_day'), t('per_day_sub'), dailyChart(sum), dailyTable(sum), legend())}
       <div class="card"><div class="card-h"><h2>${t('report')}</h2>${rep ? h`<span class="sub">${dateLong(rep.date)}</span>` : ''}</div>
@@ -1069,6 +1106,7 @@ async function renderPool(append) {
 const COLS = [['saved', 'b_saved'], ['applied', 'b_applied'], ['assessment', 'b_assessment'], ['interview', 'b_interview'], ['offer', 'b_offer'], ['closed', 'b_closed']];
 function nextBadge(a) {
   const n = a.next;
+  if (a.mail_waiting) return h`<span class="next warn">${icon('mail', 'icon-sm')}${t('next_mail')}</span>`;
   if (!n) return '';
   if (n.kind === 'oa') return h`<span class="next warn">${icon('clock', 'icon-sm')}${t('next_oa', {when: dateShort(n.at)})}</span>`;
   if (n.kind === 'interview') return h`<span class="next">${icon('calendar', 'icon-sm')}${t('next_iv', {when: dateTime(n.at)})}</span>`;
@@ -1209,8 +1247,11 @@ async function renderActivity() {
   evs.forEach(e => {
     const dk = dayKey(e.ts);
     if (dk !== last) { items.push(h`<div class="day">${dk === todayIso() ? t('today') : dateLong(e.ts)}</div>`); last = dk; }
+    const d = e.data || {};
+    const link = d.mail ? h`<a href="${safeUrl(d.mail)}" target="_blank" rel="noopener noreferrer">${t('open_mail')} ${icon('ext', 'icon-sm')}</a>`
+      : d.mail_hidden ? h`<a href="#" data-act="mail-hidden">${t('open_mail')}</a>` : '';
     items.push(h`<div class="ev"><span class="tm">${timeShort(e.ts)}</span><span class="ic">${icon(KIND_ICON[e.kind] || 'tag')}</span>
-      <span class="tx">${cap1(e.text)}<span class="kd">${t('kind_' + e.kind)}</span></span></div>`);
+      <span class="tx">${cap1(e.text)}${link}<span class="kd">${t('kind_' + e.kind)}</span></span></div>`);
   });
   html(el, h`<div class="card"><div class="card-h"><h2>${t('activity')}</h2></div>
     ${items.length ? h`<div class="feed">${items}</div>` : emptyState('clock', t('empty_act_t'), t('empty_act'))}</div>`);
@@ -1315,6 +1356,9 @@ async function openApp(id) {
   <div class="d-body">
     <section class="sec"><div class="stepper">${STEPS.map((s, i) => h`<div class="step ${closed && i > cur ? 'closed' : i < cur ? 'done' : i === cur ? 'cur' : ''}"><i></i>${t('stage_' + s)}</div>`)}</div>
       ${a.next ? h`<div style-hook>${nextBadge(a)}</div>` : ''}</section>
+    ${(a.mail || []).length ? h`<section class="sec"><h3>${t('mail_wait')}</h3>${a.mail.map(m => h`<div class="mail-item">
+      <div class="due-s">${t('mail_got', {when: dateShort(m.received_at)})}${m.count > 1 ? ' · ' + t('mail_n', {n: m.count}) : ''}${m.subject ? ' · ' + m.subject : ''}</div>
+      <div class="acts">${mailActs(m)}</div></div>`)}</section>` : ''}
     <section class="sec"><div class="acts">${eventButtons(a).map(ev => h`<button class="btn btn-sm ${['rejected', 'withdrawn', 'void', 'closed'].includes(ev) ? 'btn-ghost' : ''}" data-act="ev-form" data-ev="${ev}" data-id="${a.id}">${t('e_' + ev)}</button>`)}</div>
       <div id="ev-form" hidden></div></section>
     ${(a.tailored || []).length ? h`<section class="sec"><h3>${t('tailored')}</h3>${a.tailored.map(tailoredFile)}</section>` : ''}
@@ -1401,8 +1445,15 @@ function setHash() {
   const next = '#' + p.toString();
   if (location.hash !== next) history.replaceState(null, '', next);
 }
+function arm(el) {
+  const old = el.innerHTML;
+  el.dataset.armed = '1';
+  el.textContent = t('confirm_q');
+  setTimeout(() => { if (el.isConnected && el.dataset.armed === '1') { el.innerHTML = old; delete el.dataset.armed; } }, 4000);
+}
 async function act(el, ev) {
   const a = el.dataset.act, id = el.dataset.id;
+  if (el.dataset.confirm && el.dataset.armed !== '1' && !STATIC) return arm(el);
   switch (a) {
     case 'tab': return setTab(el.dataset.tab);
     case 'open-posting': ev.preventDefault(); return openPosting(id).catch(e => toast(t('err', {msg: e.message}), true));
@@ -1448,6 +1499,9 @@ async function act(el, ev) {
     case 'copy': return copyText(el.dataset.text, el);
     case 'filtered-kind': state.filteredKind = el.dataset.kind; return renderSearch();
     case 'static-file': ev.preventDefault(); return toast(t('static_write'));
+    case 'mail-hidden': ev.preventDefault(); return toast(t('mail_hidden'));
+    case 'mail-invite': { const r = await post('inbox/invite', {app_id: id}); if (r) { toast(t('mail_invited')); afterWrite(); } return; }
+    case 'mail-done': { const r = await post('inbox/answered', {app_id: id}); if (r) { toast(t('mail_answered')); afterWrite(); } return; }
   }
 }
 async function afterWrite() {

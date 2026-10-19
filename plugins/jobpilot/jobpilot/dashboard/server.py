@@ -9,8 +9,9 @@ Security model:
     /api/session hands to the page;
   - a Content-Security-Policy with no external sources at all: inline script and style run only with the nonce
     of that response;
-  - the writes are posting marks, application events and background tasks (a daily run, a tailoring run, a referral
-    search); each is audited in data/dashboard-actions.jsonl and shows up in the activity feed.
+  - the writes are posting marks, application events, recruiter mail marked answered or recorded as an interview
+    invitation, and background tasks (a daily run, a tailoring run, a referral search); each is audited in
+    data/dashboard-actions.jsonl and shows up in the activity feed.
 
     serve(ws, port=None, open_browser=True)    run until Ctrl-C
     export_static(ws, out_path)                one self-contained HTML file with every read view embedded (demos)
@@ -258,6 +259,21 @@ def _reason(r):
     return "excluded", r.get("status_note") or rv.get("reason") or ""
 
 
+def _mail_link(ws, message_id):
+    """{"mail": Gmail link} for a message id, or {"mail_hidden": True} in the demo (its mail is fictional)."""
+    if is_demo(ws):
+        return {"mail": None, "mail_hidden": bool(message_id)}
+    mod = _mod("inbox")
+    return {"mail": mod.gmail_link(message_id) if mod and hasattr(mod, "gmail_link") else None}
+
+
+def _waiting(ws):
+    rows = _call("inbox", "waiting", ws, default=[]) or []
+    for r in rows:
+        r.update(_mail_link(ws, r.get("message_id")))
+    return rows
+
+
 # ---------------------------------------------------------------- read views
 
 class Views:
@@ -342,7 +358,8 @@ class Views:
                      "interviews": fun["interview"], "offers": fun["offer"],
                      "upcoming_interviews": len([i for i in due["interviews"] if not i.get("past")]),
                      "deadlines": len(due["deadlines"]), "followups": len(due["followups"])},
-            "funnel": fun, "by_track": by_track, "due": due, "budget": money, "last_collection": last,
+            "funnel": fun, "by_track": by_track, "due": due, "mail": _waiting(ws), "budget": money,
+            "last_collection": last,
             "report": rep, "schedule": sched, "paused": (ws.data / "PAUSE").exists(),
             "tasks": [] if self.static else tasks.running(ws),
             "last_daily": {"at": last_daily.get("ts"), "text": last_daily.get("text")} if last_daily else None,
@@ -417,8 +434,11 @@ class Views:
         after = int((ws.cfg.get("followup") or {}).get("after_days") or 10)
         sts = [s for s in ledger.states(ws).values() if not s["voided"]]
         sts.sort(key=lambda s: (s.get("last_date") or s.get("created") or "", s["id"]), reverse=True)
-        return {"apps": [_app_lite(ws, s, after) for s in sts], "funnel": ledger.funnel(ws),
-                "inbox": self.inbox(q)}
+        waiting = {r["app_id"] for r in _waiting(ws)}
+        apps = [_app_lite(ws, s, after) for s in sts]
+        for a in apps:
+            a["mail_waiting"] = a["id"] in waiting
+        return {"apps": apps, "funnel": ledger.funnel(ws), "inbox": self.inbox(q)}
 
     def app(self, q):
         ws = self.ws
@@ -431,6 +451,7 @@ class Views:
         data["posting"] = _row(ws, row) if row else None
         data["tailored"] = [f for f in _tailored(ws) if st.get("posting_id")
                             and str(f.get("posting_id") or "") == str(st["posting_id"])]
+        data["mail"] = [r for r in _waiting(ws) if r["app_id"] == st["id"]]
         return data
 
     def due(self, q):
@@ -441,8 +462,13 @@ class Views:
         evs = util.jsonl_read(self.ws.events_path)
         evs.sort(key=lambda e: (e.get("ts") or "", e.get("seq") or 0))
         n = _int(q.get("n"), 150, 1, 1000)
-        return [{"ts": e.get("ts"), "kind": e.get("kind"), "text": e.get("text"), "data": e.get("data") or {}}
-                for e in reversed(evs[-n:])]
+        out = []
+        for e in reversed(evs[-n:]):
+            data = dict(e.get("data") or {})
+            if e.get("kind") == "inbox" and data.get("message_id"):
+                data.update(_mail_link(self.ws, data["message_id"]))
+            out.append({"ts": e.get("ts"), "kind": e.get("kind"), "text": e.get("text"), "data": data})
+        return out
 
     def reports(self, q):
         latest = brief.latest(self.ws)
@@ -639,6 +665,22 @@ class Writes:
         after = int((ws.cfg.get("followup") or {}).get("after_days") or 10)
         return {"ok": True, "app": _app_lite(ws, st, after)}
 
+    def _inbox(self):
+        mod = _mod("inbox")
+        if mod is None or not hasattr(mod, "waiting"):
+            raise ApiError(501, "the inbox module is not installed")
+        return mod
+
+    def inbox_answered(self, body):
+        app_id = _text(body, "app_id", 12, required=True).upper()
+        return dict(self._inbox().answered(self.ws, app_id, by="dashboard"), ok=True)
+
+    def inbox_invite(self, body):
+        app_id = _text(body, "app_id", 12, required=True).upper()
+        res = self._inbox().invite(self.ws, app_id, by="dashboard")
+        after = int((self.ws.cfg.get("followup") or {}).get("after_days") or 10)
+        return dict(res, ok=True, app=_app_lite(self.ws, ledger.state(self.ws, app_id), after))
+
     def tailor_start(self, body):
         self._no_demo("tailoring")
         pid = _text(body, "posting_id", 80, required=True)
@@ -691,8 +733,8 @@ class Writes:
 
 
 WRITES = {"posting/mark": "posting_mark", "app/create": "app_create", "app/event": "app_event",
-          "tailor/start": "tailor_start", "run/daily": "run_daily", "net/mark": "net_mark", "net/find": "net_find",
-          "net/cards": "net_cards"}
+          "inbox/answered": "inbox_answered", "inbox/invite": "inbox_invite", "tailor/start": "tailor_start",
+          "run/daily": "run_daily", "net/mark": "net_mark", "net/find": "net_find", "net/cards": "net_cards"}
 
 
 # ---------------------------------------------------------------- page
