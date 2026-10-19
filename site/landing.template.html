@@ -1,0 +1,738 @@
+<title>JobPilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="JobPilot: an open-source Claude Code plugin that turns your resume into a daily, evidence-scored job shortlist, truthful tailored resumes and a tracked pipeline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: an airfield operations sheet — a split-flap departures board states the thesis, then one 68ch reading
+   column whose evidence panels (score card, resume diff, live dashboard) break out to a wider measure. */
+:root {
+  --concrete: #F1F4F1;
+  --paper: #FAFBF9;
+  --ink: #14202B;
+  --ink-2: #4A5866;
+  --rule: #D2D9D4;
+  --signal: #DD5128;
+  --signal-ink: #A93A16;
+  --mark: #FBE3A6;
+  --go: #23794C;
+  --board: #15181C;
+  --flap: #22262B;
+  --flap-seam: #0B0D0F;
+  --flap-ink: #F1EEE4;
+  --amber: #F2B233;
+  --board-go: #4FC48A;
+  --board-dim: #7D848C;
+  --display: "Big Shoulders Display", "Oswald", "Arial Narrow", "Noto Sans SC", sans-serif;
+  --body: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --measure: 68ch;
+  --wide: 1120px;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --concrete: #0E1317;
+    --paper: #141B20;
+    --ink: #E5EBEE;
+    --ink-2: #9AA8B2;
+    --rule: #26313A;
+    --signal: #FF7245;
+    --signal-ink: #FF936F;
+    --mark: #5A4513;
+    --go: #4FC48A;
+    --board: #090B0D;
+    --flap: #1A1E22;
+    --flap-seam: #000000;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --concrete: #0E1317;
+  --paper: #141B20;
+  --ink: #E5EBEE;
+  --ink-2: #9AA8B2;
+  --rule: #26313A;
+  --signal: #FF7245;
+  --signal-ink: #FF936F;
+  --mark: #5A4513;
+  --go: #4FC48A;
+  --board: #090B0D;
+  --flap: #1A1E22;
+  --flap-seam: #000000;
+}
+
+* { box-sizing: border-box; }
+html[data-lang="zh"] [lang="en"], html:not([data-lang="zh"]) [lang="zh"] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--concrete);
+  color: var(--ink);
+  font: 16px/1.62 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background: var(--concrete);
+}
+a { color: var(--signal-ink); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; border-radius: 3px; }
+code, kbd, .mono { font-family: var(--mono); font-size: 0.92em; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.wrap { max-width: var(--wide); margin: 0 auto; }
+.col { max-width: var(--measure); }
+
+/* ---------------------------------------------------------------- header */
+header.top {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 5;
+  background: var(--concrete);
+  border-bottom: 1px solid var(--rule);
+}
+.top .wrap { display: flex; align-items: center; gap: 12px 24px; flex-wrap: wrap; padding-block: 12px; }
+.mark { display: flex; align-items: baseline; gap: 10px; text-decoration: none; color: var(--ink); }
+.mark b { font: 800 26px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.mark span { font: 500 12px/1 var(--mono); color: var(--ink-2); letter-spacing: 0.06em; }
+nav.links { display: flex; gap: 6px 18px; flex-wrap: wrap; margin-left: auto; font-size: 14px; }
+nav.links a { color: var(--ink-2); text-decoration: none; }
+nav.links a:hover { color: var(--ink); }
+.toggles { display: flex; gap: 6px; }
+.toggles button {
+  font: 500 12px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-2); background: transparent;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 7px 11px; cursor: pointer;
+}
+.toggles button[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- hero */
+.hero { display: grid; gap: 28px; padding-block: 52px 44px; }
+.hero h1 {
+  font: 800 clamp(42px, 7.2vw, 84px)/0.94 var(--display); letter-spacing: 0.01em; text-transform: uppercase;
+  margin-top: 14px;
+}
+.hero h1 > span { display: block; }
+.hero h1[lang="zh"] { font: 700 clamp(32px, 5vw, 56px)/1.2 var(--body); text-transform: none; letter-spacing: 0.02em; }
+.hero h1 em { font-style: normal; color: var(--signal); }
+.hero-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px 48px; align-items: end; }
+@media (min-width: 900px) { .hero-row { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); } }
+.hero .lede { font-size: 18px; color: var(--ink-2); max-width: 58ch; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; font: 600 15px/1 var(--body); text-decoration: none;
+  padding: 13px 18px; border-radius: var(--radius); border: 1px solid var(--ink); color: var(--ink);
+}
+.btn.primary { background: var(--ink); color: var(--concrete); }
+.btn:hover { transform: translateY(-1px); }
+.meta { margin-top: 14px; font: 400 13px/1.5 var(--mono); color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- departures board */
+.board {
+  background: var(--board); color: var(--flap-ink); border-radius: 10px; padding: 18px 18px 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -24px rgba(10, 14, 18, 0.65);
+}
+.board-head { display: flex; align-items: baseline; gap: 12px; justify-content: space-between; margin-bottom: 12px; }
+.board-head b { font: 800 22px/1 var(--display); letter-spacing: 0.08em; color: var(--amber); }
+.board-head span { font: 500 12px/1 var(--mono); color: var(--board-dim); letter-spacing: 0.08em; }
+.board-scroll { overflow-x: auto; scrollbar-width: thin; }
+.board { cursor: pointer; }
+.board table { border-collapse: separate; border-spacing: 0 6px; width: 100%; }
+.board th {
+  font: 500 10.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--board-dim); text-align: left;
+  padding: 0 8px 2px 0; white-space: nowrap;
+}
+.board td { padding: 0 8px 0 0; white-space: nowrap; }
+.flaps { display: inline-flex; gap: 2px; }
+.flaps i {
+  font: 500 14px/1 var(--mono); font-style: normal; text-transform: uppercase; display: inline-grid; place-items: center;
+  width: 1.12em; height: 1.62em; background: var(--flap); border-radius: 2px; position: relative; color: inherit;
+}
+.flaps i::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--flap-seam); }
+.st-ready { color: var(--amber); }
+.st-go { color: var(--board-go); }
+.st-dim { color: var(--board-dim); }
+.score-cell .flaps { color: var(--amber); }
+@media (max-width: 760px) {
+  .board .c-time, .board .c-co, .board .c-city { display: none; }
+  .flaps { gap: 1px; }
+  .flaps i { font-size: 10.5px; width: 1.04em; }
+}
+.board-foot {
+  display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #262b31;
+  font: 400 12px/1.5 var(--mono); color: var(--board-dim); font-variant-numeric: tabular-nums;
+}
+.board-foot b { color: var(--flap-ink); font-weight: 500; }
+
+/* ---------------------------------------------------------------- sections */
+section.block { padding-block: 64px; border-top: 1px solid var(--rule); }
+.kicker { font: 500 12px/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+section.block h2 { font: 800 clamp(32px, 4.4vw, 46px)/1 var(--display); text-transform: uppercase; letter-spacing: 0.01em; margin-top: 10px; }
+section.block h2[lang="zh"] { font: 700 clamp(26px, 3.4vw, 34px)/1.25 var(--body); text-transform: none; }
+.intro { margin-top: 16px; font-size: 17px; color: var(--ink-2); }
+
+/* the day: a real sequence keyed by the time each step runs */
+.day { list-style: none; margin: 36px 0 0; padding: 0; display: grid; gap: 0; }
+.day li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 20px; padding-block: 18px; border-top: 1px dashed var(--rule); }
+.day li:first-child { border-top: 0; }
+.day time { font: 500 15px/1.5 var(--mono); color: var(--signal-ink); font-variant-numeric: tabular-nums; }
+.day h3 { font: 600 18px/1.4 var(--body); }
+.day p { color: var(--ink-2); margin-top: 4px; max-width: 62ch; }
+.day .tally { margin-top: 8px; font: 400 13px/1.5 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .day li { grid-template-columns: minmax(0, 1fr); } }
+
+/* evidence panels */
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; margin-top: 32px; align-items: start; }
+@media (min-width: 960px) { .split { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } }
+.panel { background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius); padding: 22px; }
+.points { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+.points li { padding-left: 18px; position: relative; color: var(--ink-2); }
+.points li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 8px; height: 2px; background: var(--signal); }
+.points b { color: var(--ink); font-weight: 600; }
+
+.card-head { display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; }
+.card-head h3 { font: 600 18px/1.35 var(--body); }
+.card-head p { color: var(--ink-2); font-size: 14px; margin-top: 2px; }
+.score { text-align: right; flex: none; }
+.score b { font: 800 44px/0.9 var(--display); font-variant-numeric: tabular-nums; }
+.score span { display: block; font: 400 12px/1.4 var(--mono); color: var(--ink-2); }
+.comps { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+.comp-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 64px; gap: 12px; align-items: center; }
+.comp-row b { font-weight: 600; font-size: 14px; }
+.comp-row output { font: 500 13px/1 var(--mono); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { height: 8px; background: var(--rule); border-radius: 999px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--ink); border-radius: 999px; }
+.quote { margin: 6px 0 0 124px; font-size: 13.5px; color: var(--ink-2); }
+.quote q { font-family: var(--mono); font-size: 12.5px; color: var(--ink); background: var(--mark); padding: 1px 3px; border-radius: 2px; quotes: "“" "”"; }
+@media (max-width: 560px) { .comp-row { grid-template-columns: 92px minmax(0, 1fr) 58px; } .quote { margin-left: 0; } }
+.gaps { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-2); }
+.gaps b { color: var(--ink); }
+.verdict { display: inline-block; margin-top: 12px; font: 500 12px/1 var(--mono); letter-spacing: 0.06em; padding: 6px 9px; border-radius: 999px; border: 1px solid var(--go); color: var(--go); }
+
+.diff { display: grid; gap: 14px; }
+.diff-item { border-left: 2px solid var(--rule); padding-left: 14px; }
+.diff-item .op { font: 500 11px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+.diff-item p { margin-top: 6px; font-size: 14.5px; }
+.diff-item del { text-decoration: line-through; color: var(--ink-2); }
+.diff-item ins { text-decoration: none; background: var(--mark); color: var(--ink); padding: 0 2px; }
+.asks { margin-top: 20px; }
+.asks h4 { margin: 0; font: 500 12px/1.4 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+.asks ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+
+/* demo */
+.tour-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.tour-tabs button {
+  font: 500 14px/1 var(--body); padding: 10px 14px; border-radius: 999px; border: 1px solid var(--rule);
+  background: var(--paper); color: var(--ink-2); cursor: pointer;
+}
+.tour-tabs button[aria-selected="true"] { background: var(--ink); color: var(--concrete); border-color: var(--ink); }
+.screen { margin-top: 16px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--paper); }
+.screen img { display: block; width: 100%; height: auto; max-width: 100%; }
+.screen-cap { margin-top: 10px; font-size: 14px; color: var(--ink-2); }
+.live { margin-top: 28px; }
+.live-frame { position: relative; margin-top: 12px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--paper); aspect-ratio: 16 / 10; max-width: 100%; }
+.live-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--paper); }
+.live-frame .fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink-2); font-size: 14px; }
+@media (max-width: 700px) { .live-frame { aspect-ratio: 9 / 14; } }
+
+/* install */
+.steps { margin: 32px 0 0; padding: 0; list-style: none; display: grid; gap: 22px; counter-reset: step; }
+.steps li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 6px 16px; }
+.steps li::before { counter-increment: step; content: counter(step); font: 800 26px/1 var(--display); color: var(--signal); }
+.steps h3 { font: 600 17px/1.4 var(--body); }
+.steps p { color: var(--ink-2); margin-top: 4px; }
+.code { position: relative; margin-top: 10px; background: var(--board); color: var(--flap-ink); border-radius: var(--radius); overflow-x: auto; }
+.code pre { margin: 0; padding: 14px 92px 14px 16px; font: 400 13.5px/1.7 var(--mono); }
+.code .c { color: var(--board-dim); }
+.code button {
+  position: absolute; top: 9px; right: 9px; font: 500 12px/1 var(--mono); color: var(--flap-ink); background: #2a2f35;
+  border: 1px solid #3a4148; border-radius: 4px; padding: 7px 9px; cursor: pointer;
+}
+
+/* commands */
+.table-scroll { overflow-x: auto; margin-top: 28px; }
+table.cmds { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 15px; }
+table.cmds th { text-align: left; font: 500 12px/1.4 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); padding: 8px 12px 8px 0; border-bottom: 1px solid var(--ink); }
+table.cmds td { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.cmds td:first-child { font-family: var(--mono); font-size: 13.5px; white-space: nowrap; color: var(--ink); }
+
+/* two lists */
+.pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 28px; }
+@media (min-width: 860px) { .pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pair h3 { font: 600 17px/1.4 var(--body); margin-bottom: 12px; }
+.pair .num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* faq */
+.faq { margin-top: 26px; display: grid; }
+.faq details { border-top: 1px solid var(--rule); padding-block: 14px; }
+.faq details:last-child { border-bottom: 1px solid var(--rule); }
+.faq summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; gap: 12px; justify-content: space-between; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font: 500 18px/1 var(--mono); color: var(--ink-2); }
+.faq details[open] summary::after { content: "−"; }
+.faq details p { margin-top: 10px; color: var(--ink-2); max-width: 66ch; }
+
+/* footer */
+footer.author { border-top: 1px solid var(--rule); padding-block: 48px 64px; }
+footer .who { font: 800 30px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+footer .who[lang="zh"] { font: 700 22px/1.4 var(--body); text-transform: none; }
+footer p { margin-top: 10px; color: var(--ink-2); max-width: 60ch; }
+footer .links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 16px; }
+footer small { display: block; margin-top: 28px; font: 400 12px/1.5 var(--mono); color: var(--ink-2); }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--concrete); font-size: 14px; padding: 9px 14px; border-radius: 999px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .btn:hover { transform: none; } .toast { transition: none; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="mark" href="#top"><b>JobPilot</b><span>v0.1 · MIT</span></a>
+    <nav class="links" aria-label="Sections">
+      <a href="#day"><span lang="en">How it works</span><span lang="zh">工作流程</span></a>
+      <a href="#demo"><span lang="en">Demo</span><span lang="zh">演示</span></a>
+      <a href="#install"><span lang="en">Install</span><span lang="zh">安装</span></a>
+      <a href="#faq"><span lang="en">FAQ</span><span lang="zh">常见问题</span></a>
+      <a href="https://github.com/ZhengShixin/JobPilot" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+    <div class="toggles">
+      <button type="button" id="lang-en" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" id="lang-zh" data-lang="zh" aria-pressed="false">中文</button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <p class="eyebrow"><span lang="en">Open-source plugin for Claude Code</span><span lang="zh">Claude Code 开源插件</span></p>
+      <h1 lang="en"><span>The jobs that fit you.</span> <em>Every morning.</em> <span>With the evidence.</span></h1>
+      <h1 lang="zh"><span>每天早上，只看<em>真正适合你</em>的岗位。</span><span>每一分都有证据。</span></h1>
+    </div>
+    <div class="hero-row">
+      <p class="lede" lang="en">Upload your resume once. JobPilot searches LinkedIn under a hard budget, drops what you can never take, has Claude score the rest with word-for-word quotes, tailors your resume without inventing anything, and keeps your whole pipeline on a local dashboard.</p>
+      <p class="lede" lang="zh">上传一次简历。JobPilot 在严格的预算上限内搜索 LinkedIn，先免费筛掉你一定投不了的岗位，再让 Claude 逐条打分、每一分都引用原文；定制简历绝不编造，整个投递进度都在本地 dashboard 上。</p>
+      <div>
+        <div class="ctas">
+          <a class="btn primary" href="https://github.com/ZhengShixin/JobPilot" target="_blank" rel="noopener"><span lang="en">Get it on GitHub</span><span lang="zh">去 GitHub 获取</span> ↗</a>
+          <a class="btn" href="#demo"><span lang="en">See the dashboard</span><span lang="zh">看 dashboard 演示</span></a>
+        </div>
+        <p class="meta"><span lang="en">Python standard library only · macOS and Linux · your own Apify and Claude accounts</span><span lang="zh">纯 Python 标准库 · macOS 和 Linux · 用你自己的 Apify 和 Claude 账号</span></p>
+      </div>
+    </div>
+
+    <div class="board" id="board" role="img" aria-label="Departures board listing today's job matches (fictional example data)" title="Click to flip the board">
+      <div class="board-head"><b>DEPARTURES</b><span>MON 07:58 · EXAMPLE DATA</span></div>
+      <div class="board-scroll">
+        <table>
+          <thead><tr><th class="c-time">TIME</th><th>ROLE</th><th class="c-co">COMPANY</th><th class="c-city">CITY</th><th>FIT</th><th>STATUS</th></tr></thead>
+          <tbody>
+            <tr><td class="c-time" data-flap="07:42" data-live></td><td data-flap="ML ENGINEER II"></td><td class="c-co" data-flap="NORTHWIND"></td><td class="c-city" data-flap="NEW YORK"></td><td class="score-cell" data-flap="8.5" data-live></td><td class="st-ready" data-flap="READY" data-live></td></tr>
+            <tr><td class="c-time" data-flap="07:43" data-live></td><td data-flap="APPLIED SCIENTIST"></td><td class="c-co" data-flap="ACME ROBOTICS"></td><td class="c-city" data-flap="SEATTLE"></td><td class="score-cell" data-flap="8.0" data-live></td><td class="st-ready" data-flap="TAILORED" data-live></td></tr>
+            <tr><td class="c-time" data-flap="07:43" data-live></td><td data-flap="DATA SCIENTIST"></td><td class="c-co" data-flap="BLUEFIN"></td><td class="c-city" data-flap="CHICAGO"></td><td class="score-cell" data-flap="7.5" data-live></td><td data-flap="APPLIED" data-live></td></tr>
+            <tr><td class="c-time" data-flap="07:44" data-live></td><td data-flap="MLE, RANKING"></td><td class="c-co" data-flap="LUMEN HEALTH"></td><td class="c-city" data-flap="REMOTE"></td><td class="score-cell" data-flap="6.5" data-live></td><td class="st-go" data-flap="INTERVIEW" data-live></td></tr>
+            <tr><td class="c-time" data-flap="07:41" data-live></td><td data-flap="SR ML ENGINEER"></td><td class="c-co" data-flap="VERTEX"></td><td class="c-city" data-flap="AUSTIN"></td><td class="st-dim" data-flap="--" data-live></td><td class="st-dim" data-flap="10+ YRS" data-live></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="board-foot"><span><b>63</b> found</span><span><b>27</b> dropped free</span><span><b>36</b> reviewed</span><span><b>9</b> ready</span><span>Apify <b>$0.42</b> of $0.80 today</span></div>
+    </div>
+  </div>
+
+  <section class="block" id="day">
+    <div class="wrap">
+      <p class="kicker"><span lang="en">How a day runs</span><span lang="zh">一天怎么运行</span></p>
+      <h2 lang="en">It runs before you wake up</h2>
+      <h2 lang="zh">你醒来之前，它已经跑完</h2>
+      <p class="intro col" lang="en">A plain-Python core handles everything that must be exact: money, filters, scores, ledgers. Claude handles the judgment calls, in one-shot runs with no tools whose answers must fit a schema.</p>
+      <p class="intro col" lang="zh">所有必须精确的事情（钱、筛选、分数、账本）都由纯 Python 代码完成；需要判断力的事情交给 Claude，每次都是一次性调用、没有任何工具，回答必须符合固定的 JSON 格式。</p>
+      <ol class="day">
+        <li><time>07:30</time><div>
+          <h3><span lang="en">Collect, under a hard cap</span><span lang="zh">采集，严格封顶</span></h3>
+          <p lang="en">One Apify run per search group, in your track order. Every run carries its own spending cap, and today's cap spreads your monthly budget across the month.</p>
+          <p lang="zh">每个搜索组跑一次 Apify，按你的方向优先级排序。每次运行都有自己的花费上限，每天的上限把月预算均摊到每一天。</p>
+          <p class="tally">maxTotalChargeUsd = min(group budget, today's cap − spent)</p></div></li>
+        <li><time>07:41</time><div>
+          <h3><span lang="en">Drop what you can never take, for free</span><span lang="zh">免费筛掉一定投不了的</span></h3>
+          <p lang="en">Internships, citizenship-only roles, "no sponsorship" if you need it, salary floors, 10+ years for a junior search, AI-training gigs. Each drop keeps its rule, so a wrong one is easy to see and loosen.</p>
+          <p lang="zh">实习、只招美国公民、你需要 sponsor 但对方明确不提供、薪资低于底线、初级求职却要求 10 年以上、AI 数据标注零工。每条都记录是哪条规则筛掉的，错杀一眼就能看到、随时放宽。</p>
+          <p class="tally">27 dropped · $0.00 · rule and quote kept for each</p></div></li>
+        <li><time>07:42</time><div>
+          <h3><span lang="en">Claude reviews, code checks</span><span lang="zh">Claude 评审，代码核查</span></h3>
+          <p lang="en">Batches of full job descriptions go to a one-shot <code>claude -p</code> run. Each review scores duties, background, skills and seniority on your track's own rubric, quoting the posting and your profile word for word.</p>
+          <p lang="zh">完整的 JD 分批交给一次性的 <code>claude -p</code>。每条评审按你这个方向自己的打分标准，给职责、背景、技能、资历四项打分，并逐字引用 JD 和你的资料。</p>
+          <p class="tally">36 reviewed · 9 ready · 2 quotes not found → retried</p></div></li>
+        <li><time>07:56</time><div>
+          <h3><span lang="en">A short report</span><span lang="zh">一份简短的日报</span></h3>
+          <p lang="en">Top matches per track, assessments and interviews coming up, applications worth a follow-up, and what the search cost.</p>
+          <p lang="zh">每个方向的最佳匹配、即将到来的测评和面试、该跟进的投递，以及今天的搜索花费。</p>
+          <p class="tally">reports/daily/2026-10-19.md · dashboard · optional notification</p></div></li>
+        <li><time><span lang="en">You</span><span lang="zh">你</span></time><div>
+          <h3><span lang="en">Pick, tailor, apply yourself</span><span lang="zh">挑选、定制、自己投递</span></h3>
+          <p lang="en">Open the dashboard, tailor a resume for the roles you like, submit them yourself, and record what happens. JobPilot never clicks Submit and never sends a message for you.</p>
+          <p lang="zh">打开 dashboard，为喜欢的岗位定制简历，自己提交，然后记录进展。JobPilot 从不替你点提交，也从不替你发任何消息。</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="evidence">
+    <div class="wrap">
+      <p class="kicker"><span lang="en">Scores you can audit</span><span lang="zh">可以核查的分数</span></p>
+      <h2 lang="en">No quote, no score</h2>
+      <h2 lang="zh">没有原文引用，就没有分数</h2>
+      <div class="split">
+        <div class="col">
+          <ul class="points">
+            <li lang="en"><b>The model proposes, code decides.</b> JobPilot accepts a review only if every quote occurs verbatim in the posting or in your profile, every component is in range, and the category belongs to the track.</li>
+            <li lang="zh"><b>模型提出，代码裁决。</b>只有每条引文都能在 JD 或你的资料里逐字找到、每项分数都在范围内、类别也属于这个方向，评审才会被接受。</li>
+            <li lang="en"><b>The score is computed, not asked for:</b> min(fit cap, duties + background + skills + seniority).</li>
+            <li lang="zh"><b>分数由代码计算，而不是问模型要：</b>min（封顶分，职责 + 背景 + 技能 + 资历）。</li>
+            <li lang="en"><b>Each track has its own rubric.</b> A data-science role is never judged by an ML-engineering yardstick.</li>
+            <li lang="zh"><b>每个方向有自己的打分标准。</b>数据科学岗不会用机器学习工程的尺子去量。</li>
+            <li lang="en"><b>Edit your rubric and older scores turn stale</b> until they are rescored. They never quietly change meaning.</li>
+            <li lang="zh"><b>修改打分标准后，旧分数自动标记为过期</b>，重新评审前不会悄悄改变含义。</li>
+          </ul>
+        </div>
+        <article class="panel" aria-label="Example score card">
+          <div class="card-head">
+            <div>
+              <h3>Machine Learning Engineer II</h3>
+              <p>Northwind Analytics · New York · <span lang="en">track</span><span lang="zh">方向</span> MLE</p>
+            </div>
+            <div class="score"><b>8.5</b><span>/ 10</span></div>
+          </div>
+          <ul class="comps">
+            <li>
+              <div class="comp-row"><b><span lang="en">Duties</span><span lang="zh">职责</span></b><div class="bar"><span style="width:87.5%"></span></div><output>3.5 / 4</output></div>
+              <p class="quote">JD <q>train, evaluate and deploy ranking models for our marketplace</q></p>
+            </li>
+            <li>
+              <div class="comp-row"><b><span lang="en">Background</span><span lang="zh">背景</span></b><div class="bar"><span style="width:83%"></span></div><output>2.5 / 3</output></div>
+              <p class="quote"><span lang="en">Profile</span><span lang="zh">资料</span> <q>Trained gradient-boosted and transformer ranking models in PyTorch</q></p>
+            </li>
+            <li>
+              <div class="comp-row"><b><span lang="en">Skills</span><span lang="zh">技能</span></b><div class="bar"><span style="width:100%"></span></div><output>2 / 2</output></div>
+              <p class="quote">JD <q>Python and PyTorch</q> · <span lang="en">Profile</span><span lang="zh">资料</span> <q>Skills: Python, SQL, Bash, PyTorch</q></p>
+            </li>
+            <li>
+              <div class="comp-row"><b><span lang="en">Seniority</span><span lang="zh">资历</span></b><div class="bar"><span style="width:50%"></span></div><output>0.5 / 1</output></div>
+              <p class="quote">JD <q>3+ years of experience</q></p>
+            </li>
+          </ul>
+          <p class="gaps"><b><span lang="en">Gaps</span><span lang="zh">缺口</span>:</b> <span lang="en">Kubernetes (required, not in profile) · 3+ years vs about 2.5</span><span lang="zh">Kubernetes（JD 要求，资料里没有）· 要求 3 年以上，资料约 2.5 年</span></p>
+          <span class="verdict"><span lang="en">quotes verified · score computed in code</span><span lang="zh">引文已核实 · 分数由代码计算</span></span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="tailor">
+    <div class="wrap">
+      <p class="kicker"><span lang="en">Tailoring that never invents</span><span lang="zh">不编造的简历定制</span></p>
+      <h2 lang="en">Your resume, sharpened. Not rewritten.</h2>
+      <h2 lang="zh">打磨你的简历，而不是重写它</h2>
+      <div class="split">
+        <div class="col">
+          <ul class="points">
+            <li lang="en"><b>Your own Word file, edited in place.</b> Only the changed words are rewritten; fonts, spacing and layout stay byte for byte.</li>
+            <li lang="zh"><b>直接在你自己的 Word 文件上改。</b>只改动变化的那几个词，字体、间距、版式一个字节都不动。</li>
+            <li lang="en"><b>Minor edits on purpose:</b> reorder by the posting's priorities, mirror its nouns only where true, about 3–4 bullets.</li>
+            <li lang="zh"><b>刻意只做小改动：</b>按 JD 的重点重新排序，只在属实的地方用 JD 的关键词，大约改 3–4 条。</li>
+            <li lang="en"><b>Questions instead of fiction.</b> When a stronger bullet needs a fact you never stated, JobPilot asks you.</li>
+            <li lang="zh"><b>缺事实就问你，而不是编。</b>想把一条写得更强、却缺少你没提供过的事实时，它会直接问你。</li>
+            <li lang="en"><b>A second pair of eyes.</b> An independent claims audit checks every changed sentence against your profile before you send anything.</li>
+            <li lang="zh"><b>再加一道审核。</b>独立的事实审核员对照你的资料逐句检查每处改动，你再决定要不要用。</li>
+          </ul>
+        </div>
+        <article class="panel" aria-label="Example tailoring result">
+          <div class="diff">
+            <div class="diff-item"><p class="op"><span lang="en">reordered</span><span lang="zh">调整顺序</span></p>
+              <p><b>Model Monitoring:</b> Designed drift and data-quality checks with Great Expectations… <span class="mono" style="color:var(--ink-2)">↑ <span lang="en">moved to second</span><span lang="zh">移到第二条</span></span></p></div>
+            <div class="diff-item"><p class="op"><span lang="en">reworded</span><span lang="zh">改写</span></p>
+              <p><b>LLM Retrieval Prototype:</b> Built a retrieval-augmented <ins>(RAG)</ins> question-answering prototype over product manuals…</p></div>
+            <div class="diff-item"><p class="op"><span lang="en">reordered</span><span lang="zh">调整顺序</span></p>
+              <p><b>ML:</b> PyTorch, <ins>Hugging Face Transformers,</ins> scikit-learn, XGBoost, LightGBM<del>, Hugging Face Transformers</del></p></div>
+          </div>
+          <div class="asks">
+            <h4><span lang="en">Facts to confirm (asked, not guessed)</span><span lang="zh">需要你确认的事实（问你，不猜）</span></h4>
+            <ul>
+              <li>Are you open to travel of about 20 percent?</li>
+              <li>Did you evaluate the retrieval prototype, for example answer accuracy? With what metric?</li>
+              <li>Have you written TypeScript or React code in any project or job?</li>
+            </ul>
+          </div>
+          <span class="verdict"><span lang="en">claims audit passed · 1 page · PDF ready</span><span lang="zh">事实审核通过 · 1 页 · PDF 已生成</span></span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="demo">
+    <div class="wrap">
+      <p class="kicker"><span lang="en">The dashboard</span><span lang="zh">Dashboard</span></p>
+      <h2 lang="en">One calm screen for the whole search</h2>
+      <h2 lang="zh">整个求职过程，一个安静的屏幕</h2>
+      <p class="intro col" lang="en">Runs on your laptop at 127.0.0.1, in English or Chinese, light or dark. The screens below use a fictional candidate and fictional companies.</p>
+      <p class="intro col" lang="zh">运行在你自己电脑的 127.0.0.1 上，中英文、深浅色都可以。下面的画面使用的是虚构的求职者和虚构的公司。</p>
+      <div class="tour-tabs" role="tablist" aria-label="Dashboard screens">
+        <button type="button" role="tab" id="tab-today" aria-selected="true" data-shot="today"><span lang="en">Today</span><span lang="zh">今天</span></button>
+        <button type="button" role="tab" id="tab-pool" aria-selected="false" data-shot="pool"><span lang="en">Job pool</span><span lang="zh">岗位库</span></button>
+        <button type="button" role="tab" id="tab-apps" aria-selected="false" data-shot="apps"><span lang="en">Applications</span><span lang="zh">投递</span></button>
+        <button type="button" role="tab" id="tab-refs" aria-selected="false" data-shot="refs"><span lang="en">Referrals</span><span lang="zh">内推</span></button>
+        <button type="button" role="tab" id="tab-live" aria-selected="false" data-shot="live"><span lang="en">Try it live</span><span lang="zh">在线试用</span></button>
+      </div>
+      <div id="shots">
+        <figure class="screen" data-pane="today"><img lang="en" alt="Today: KPI tiles, top matches per track, what is due" src="{{IMG_TODAY}}"><img lang="zh" alt="今日：关键指标、各方向最佳匹配、即将到期的事项" src="{{IMG_TODAY_ZH}}"></figure>
+        <figure class="screen" data-pane="pool" hidden><img alt="Job pool with a posting's score breakdown" src="{{IMG_POOL}}"></figure>
+        <figure class="screen" data-pane="apps" hidden><img alt="Applications kanban by stage" src="{{IMG_APPS}}"></figure>
+        <figure class="screen" data-pane="refs" hidden><img alt="Referral cards with drafted notes" src="{{IMG_REFS}}"></figure>
+        <div class="live-frame" data-pane="live" hidden>
+          <div class="fallback"><span lang="en">Loading the interactive demo… If nothing appears, your viewer blocks embedded pages; the other tabs show the same demo.</span><span lang="zh">正在加载可交互演示……如果一直空白，说明当前查看器不允许嵌入页面，其他标签页展示的是同一个演示。</span></div>
+        </div>
+      </div>
+      <p class="screen-cap" id="shot-cap"></p>
+    </div>
+  </section>
+
+  <section class="block" id="install">
+    <div class="wrap">
+      <p class="kicker"><span lang="en">Install</span><span lang="zh">安装</span></p>
+      <h2 lang="en">Three steps, about ten minutes</h2>
+      <h2 lang="zh">三步，大约十分钟</h2>
+      <ol class="steps">
+        <li><div>
+          <h3><span lang="en">Add the plugin in Claude Code</span><span lang="zh">在 Claude Code 里添加插件</span></h3>
+          <div class="code"><pre id="code-1">/plugin marketplace add ZhengShixin/JobPilot
+/plugin install jobpilot@jobpilot</pre><button type="button" data-copy="code-1">copy</button></div></div></li>
+        <li><div>
+          <h3><span lang="en">Set up from your resume</span><span lang="zh">用你的简历完成设置</span></h3>
+          <p lang="en">In a new folder for your search. Setup reads the resume, asks a few questions only you can answer, proposes role tracks, writes the rubrics and the search plan, and checks the plan for free.</p>
+          <p lang="zh">在一个专门的新文件夹里运行。setup 会读简历、只问几个必须由你回答的问题、推荐求职方向、写好打分标准和搜索方案，并免费验证一遍。</p>
+          <div class="code"><pre id="code-2"><span class="c"># terminal</span>
+mkdir ~/job-search &amp;&amp; cd ~/job-search &amp;&amp; claude
+<span class="c"># then, in Claude Code</span>
+/jobpilot:setup ~/Downloads/my-resume.pdf</pre><button type="button" data-copy="code-2">copy</button></div></div></li>
+        <li><div>
+          <h3><span lang="en">Save your Apify token, then run</span><span lang="zh">保存 Apify token，然后开跑</span></h3>
+          <p lang="en">The token goes in through a hidden prompt in your own terminal and never enters the chat.</p>
+          <p lang="zh">token 在你自己的终端里通过隐藏输入保存，永远不会出现在对话里。</p>
+          <div class="code"><pre id="code-3">./jobpilot token set
+<span class="c"># back in Claude Code</span>
+/jobpilot:daily        <span class="c"># first search and review</span>
+/jobpilot:dashboard    <span class="c"># open the dashboard</span>
+/jobpilot:schedule     <span class="c"># run every morning</span></pre><button type="button" data-copy="code-3">copy</button></div></div></li>
+      </ol>
+      <p class="intro col" lang="en">No accounts yet? <code>plugins/jobpilot/bin/jobpilot demo ~/jobpilot-demo</code> builds the demo workspace you see above.</p>
+      <p class="intro col" lang="zh">还没有账号？<code>plugins/jobpilot/bin/jobpilot demo ~/jobpilot-demo</code> 会生成上面看到的演示工作区。</p>
+
+      <div class="table-scroll">
+        <table class="cmds">
+          <thead><tr><th><span lang="en">Command</span><span lang="zh">命令</span></th><th><span lang="en">What it does</span><span lang="zh">作用</span></th></tr></thead>
+          <tbody>
+            <tr><td>/jobpilot:setup</td><td><span lang="en">resume → facts, tracks, rubrics, search plan, offline check</span><span lang="zh">简历 → 事实、方向、打分标准、搜索方案、离线验证</span></td></tr>
+            <tr><td>/jobpilot:daily</td><td><span lang="en">search now → filter → AI review → report</span><span lang="zh">立刻搜索 → 粗筛 → AI 评审 → 日报</span></td></tr>
+            <tr><td>/jobpilot:jobs</td><td><span lang="en">walk through the best matches and decide</span><span lang="zh">一起过最匹配的岗位，决定投哪些</span></td></tr>
+            <tr><td>/jobpilot:tailor</td><td><span lang="en">truthful tailored resume and cover letter, with an audit</span><span lang="zh">不造假的定制简历和求职信，附审核</span></td></tr>
+            <tr><td>/jobpilot:track</td><td><span lang="en">"got an OA from Acme due Friday" → logged</span><span lang="zh">"Acme 发了 OA，周五截止" → 记账</span></td></tr>
+            <tr><td>/jobpilot:inbox</td><td><span lang="en">read Gmail for updates and record them</span><span lang="zh">只读 Gmail，自动记录进展</span></td></tr>
+            <tr><td>/jobpilot:referrals</td><td><span lang="en">alumni at a company + notes you send yourself</span><span lang="zh">找公司里的校友 + 你自己发送的附言</span></td></tr>
+            <tr><td>/jobpilot:tune</td><td><span lang="en">fix missed roles, noise or scoring from real results</span><span lang="zh">根据真实结果修正漏搜、噪声和打分</span></td></tr>
+            <tr><td>/jobpilot:dashboard · schedule · help</td><td><span lang="en">open the dashboard · daily automation · everything else</span><span lang="zh">打开 dashboard · 每日自动运行 · 其他帮助</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pair">
+        <div>
+          <h3><span lang="en">What it costs</span><span lang="zh">花费</span></h3>
+          <ul class="points">
+            <li lang="en"><b>Apify, your account:</b> about <span class="num">$0.005</span> per posting on the free tier. A focused search of about 80 postings a day is roughly <span class="num">$0.40</span> a day, with caps per run, per day and per month.</li>
+            <li lang="zh"><b>Apify（你自己的账号）：</b>免费档每条岗位约 <span class="num">$0.005</span>。每天约 80 条的精准搜索，大约每天 <span class="num">$0.40</span>，每次运行、每天、每月都有上限。</li>
+            <li lang="en"><b>Claude, your plan:</b> a batch of about ten job descriptions averages <span class="num">$0.20</span> at API prices; the free filter removes a large share first.</li>
+            <li lang="zh"><b>Claude（你自己的额度）：</b>一批约 10 份 JD 按 API 价格平均约 <span class="num">$0.20</span>；免费粗筛会先去掉一大部分。</li>
+          </ul>
+        </div>
+        <div>
+          <h3><span lang="en">What it never does</span><span lang="zh">它绝不会做的事</span></h3>
+          <ul class="points">
+            <li lang="en">Submit an application, fill a form or log in anywhere for you.</li>
+            <li lang="zh">替你提交申请、填写表单，或者登录任何网站。</li>
+            <li lang="en">Send, draft, label or delete email; message anyone on LinkedIn.</li>
+            <li lang="zh">发送、起草、标记或删除邮件；在 LinkedIn 上给任何人发消息。</li>
+            <li lang="en">Read your Apify token into the conversation.</li>
+            <li lang="zh">把你的 Apify token 读进对话。</li>
+            <li lang="en">Put a fact on your resume that your profile does not contain.</li>
+            <li lang="zh">在简历里写进你资料里没有的事实。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="faq">
+    <div class="wrap">
+      <p class="kicker">FAQ</p>
+      <h2 lang="en">Questions people ask</h2>
+      <h2 lang="zh">常见问题</h2>
+      <div class="faq col">
+        <details><summary><span lang="en">Will it apply to jobs for me?</span><span lang="zh">它会替我投递吗？</span></summary>
+          <p lang="en">No. It finds, scores and prepares; you submit. Auto-apply bots get flagged by employers and break on every form; a guard hook keeps JobPilot out of email and LinkedIn inside your workspace.</p>
+          <p lang="zh">不会。它负责找、打分和准备，提交由你来。自动投递机器人容易被雇主识别，也会在各种表单上出错；工作区里还有守卫 hook，禁止 JobPilot 碰邮件和 LinkedIn。</p></details>
+        <details><summary><span lang="en">Which jobs and countries does it cover?</span><span lang="zh">覆盖哪些岗位和地区？</span></summary>
+          <p lang="en">Any role family your resume supports (engineering, data, research, quant, analytics…). Postings come from a LinkedIn job index on Apify; locations are configurable, for example "United States" or "London, England, United Kingdom".</p>
+          <p lang="zh">你的简历能支撑的任何方向（工程、数据、研究、量化、分析……）。岗位来自 Apify 上的 LinkedIn 岗位索引，地区可以配置，比如 "United States" 或 "London, England, United Kingdom"。</p></details>
+        <details><summary><span lang="en">Does my data leave my computer?</span><span lang="zh">我的数据会离开我的电脑吗？</span></summary>
+          <p lang="en">Only what each step needs: job descriptions and your scoring profile go to Claude for review, search filters go to Apify. Everything else stays in your workspace folder. There is no telemetry.</p>
+          <p lang="zh">只发送每一步必需的内容：JD 和你的打分资料发给 Claude 评审，搜索条件发给 Apify，其余全部留在你的工作区文件夹里。没有任何遥测。</p></details>
+        <details><summary><span lang="en">I need visa sponsorship. Does it handle that?</span><span lang="zh">我需要 sponsor，它能处理吗？</span></summary>
+          <p lang="en">Yes. Set your work authorization during setup: postings that explicitly say they will not sponsor are dropped for free, and the reviewer flags citizenship or clearance requirements.</p>
+          <p lang="zh">可以。在 setup 时填写你的工作身份：明确写着不提供 sponsor 的岗位会被免费筛掉，评审还会标出要求公民身份或安全许可的岗位。</p></details>
+        <details><summary><span lang="en">Can I use it without Claude Code?</span><span lang="zh">不用 Claude Code 能用吗？</span></summary>
+          <p lang="en">The command line works on its own (<code>pipx install</code> from GitHub): collection, review through the <code>claude</code> CLI, the ledger and the dashboard. The guided setup and tailoring conversations are Claude Code skills.</p>
+          <p lang="zh">命令行可以单独用（从 GitHub <code>pipx install</code>）：采集、通过 <code>claude</code> 命令行评审、账本和 dashboard 都能跑。引导式的 setup 和定制简历对话是 Claude Code 的 skill。</p></details>
+        <details><summary><span lang="en">Is the referral finder allowed by LinkedIn?</span><span lang="zh">校友内推功能符合 LinkedIn 的规定吗？</span></summary>
+          <p lang="en">It uses a third-party Apify actor that collects public profile data, and LinkedIn's terms restrict scraping, so you decide whether to use it. It only runs when you ask, keeps results on your machine, and never contacts anyone.</p>
+          <p lang="zh">它使用第三方 Apify actor 采集公开资料，而 LinkedIn 的条款限制抓取，所以用不用由你决定。只有你主动发起才会运行，结果只留在你的电脑上，也从不联系任何人。</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="author">
+  <div class="wrap">
+    <p class="who" lang="en">Built by Shixin Zheng</p>
+    <p class="who" lang="zh">作者：Shixin Zheng</p>
+    <p lang="en">JobPilot is the open-source, generalized version of the system I built for my own job search and use every day. I'm looking for Quant Researcher, Research Scientist and ML Engineer roles; referrals and introductions are very welcome.</p>
+    <p lang="zh">JobPilot 是我为自己的求职搭建、每天都在用的系统的开源通用版。我正在找 Quant Researcher、Research Scientist、ML Engineer 方向的工作，非常欢迎内推和引荐！</p>
+    <div class="links">
+      <a href="https://github.com/ZhengShixin/JobPilot" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://shixin-zheng.github.io" target="_blank" rel="noopener"><span lang="en">Website</span><span lang="zh">个人网站</span> ↗</a>
+      <a href="https://www.linkedin.com/in/shixinzheng/" target="_blank" rel="noopener">LinkedIn ↗</a>
+    </div>
+    <small><span lang="en">MIT License · example data on this page is fictional</span><span lang="zh">MIT 许可证 · 本页示例数据均为虚构</span></small>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script id="demo-b64" type="application/octet-stream">{{DEMO_B64}}</script>
+<script>
+(function () {
+  var root = document.documentElement;
+  function store(key, value) { try { if (value === undefined) return localStorage.getItem(key); localStorage.setItem(key, value); } catch (e) { return null; } }
+
+  // language: saved choice, else the browser's
+  function setLang(lang) {
+    root.setAttribute("data-lang", lang);
+    root.setAttribute("lang", lang === "zh" ? "zh-CN" : "en");
+    document.getElementById("lang-en").setAttribute("aria-pressed", String(lang === "en"));
+    document.getElementById("lang-zh").setAttribute("aria-pressed", String(lang === "zh"));
+    updateCaption();
+    var frame = document.querySelector('[data-pane="live"] iframe');
+    if (frame) { frame.srcdoc = frame.srcdoc; }  // the embedded dashboard reads the same saved language
+  }
+  var saved = store("jobpilot.lang");
+  var initial = saved || ((navigator.language || "").toLowerCase().indexOf("zh") === 0 ? "zh" : "en");
+  document.querySelectorAll(".toggles button").forEach(function (b) {
+    b.addEventListener("click", function () { setLang(b.dataset.lang); store("jobpilot.lang", b.dataset.lang); });
+  });
+
+  // split-flap board: the final text is laid out first; the flip animation only plays on top of it
+  var GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.";
+  var cells = [];
+  document.querySelectorAll("[data-flap]").forEach(function (td) {
+    var text = td.getAttribute("data-flap");
+    var live = td.hasAttribute("data-live");
+    var wrap = document.createElement("span");
+    wrap.className = "flaps";
+    for (var i = 0; i < text.length; i++) {
+      var ch = document.createElement("i");
+      ch.textContent = text[i];
+      wrap.appendChild(ch);
+      cells.push({ el: ch, final: text[i], live: live });
+    }
+    td.appendChild(wrap);
+  });
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var flipping = false;
+  function flip(all, spread) {
+    if (still || flipping) return;
+    flipping = true;
+    var start = performance.now();
+    var chosen = cells.filter(function (c) { return c.final !== " " && (all || c.live); });
+    chosen.forEach(function (c, k) { c.until = 180 + (k % 17) * (spread / 17) + Math.random() * 160; });
+    (function tick(now) {
+      var t = now - start, busy = false;
+      chosen.forEach(function (c) {
+        if (t < c.until) { busy = true; c.el.textContent = GLYPHS[(Math.random() * GLYPHS.length) | 0]; }
+        else if (c.el.textContent !== c.final) { c.el.textContent = c.final; }
+      });
+      if (busy) { requestAnimationFrame(tick); } else { flipping = false; }
+    })(start);
+  }
+  // the text rests in place from the first frame; on load only the time, fit and status columns flip briefly
+  setTimeout(function () { flip(false, 360); }, 350);
+  document.getElementById("board").addEventListener("click", function () { flip(true, 760); });
+
+  // dashboard tour
+  var captions = {
+    today: ["Today: new matches per track, what is due, the funnel and the latest report.", "今天：各方向的新匹配、即将到期的事项、投递漏斗和最新日报。"],
+    pool: ["The job pool: filter by track, status and score; every posting opens to its quoted evidence.", "岗位库：按方向、状态、分数筛选；每个岗位都能展开看到原文证据。"],
+    apps: ["Applications by stage, with assessment deadlines and interview times.", "按阶段排列的投递，含测评截止日和面试时间。"],
+    refs: ["Referrals: alumni ranked by who can help, with notes you copy and send yourself.", "内推：按能否帮上忙排序的校友，附言复制后由你自己发送。"],
+    live: ["The real dashboard with the demo data, running inside this page. Changes are not saved.", "嵌在本页里的真实 dashboard（演示数据），可以随意点，改动不会保存。"]
+  };
+  var current = "today";
+  function updateCaption() {
+    var c = captions[current] || captions.today;
+    document.getElementById("shot-cap").textContent = root.getAttribute("data-lang") === "zh" ? c[1] : c[0];
+  }
+  var liveLoaded = false;
+  function loadLive() {
+    if (liveLoaded) return;
+    liveLoaded = true;
+    var holder = document.querySelector('[data-pane="live"]');
+    var raw = document.getElementById("demo-b64").textContent.trim();
+    if (!raw || raw.indexOf("{{") === 0) return;
+    try {
+      var bytes = Uint8Array.from(atob(raw), function (ch) { return ch.charCodeAt(0); });
+      var html = new TextDecoder("utf-8").decode(bytes);
+      var frame = document.createElement("iframe");
+      frame.title = "JobPilot dashboard demo";
+      frame.setAttribute("sandbox", "allow-scripts allow-same-origin");
+      frame.srcdoc = html;
+      holder.appendChild(frame);
+    } catch (e) { /* the fallback text stays visible */ }
+  }
+  document.querySelectorAll(".tour-tabs button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      current = b.dataset.shot;
+      document.querySelectorAll(".tour-tabs button").forEach(function (o) { o.setAttribute("aria-selected", String(o === b)); });
+      document.querySelectorAll("#shots [data-pane]").forEach(function (p) { p.hidden = p.dataset.pane !== current; });
+      if (current === "live") loadLive();
+      updateCaption();
+    });
+  });
+
+  // copy buttons
+  var toast = document.getElementById("toast");
+  function say(text) { toast.textContent = text; toast.classList.add("on"); setTimeout(function () { toast.classList.remove("on"); }, 1600); }
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var text = document.getElementById(b.dataset.copy).innerText.split("\n").filter(function (l) { return l.trim() && l.trim().indexOf("#") !== 0; })
+        .map(function (l) { return l.replace(/\s+#.*$/, ""); }).join("\n");
+      var zh = root.getAttribute("data-lang") === "zh";
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { say(zh ? "已复制" : "Copied"); }, function () { say(zh ? "复制失败，请手动选择文字" : "Copy failed; select the text instead"); });
+      } else { say(zh ? "请手动选择文字复制" : "Select the text to copy it"); }
+    });
+  });
+
+  setLang(initial);
+})();
+</script>

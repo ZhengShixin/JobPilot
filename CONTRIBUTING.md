@@ -14,3 +14,5 @@ Thanks for helping! A few rules keep JobPilot safe and easy to install:
 - Validate the plugin: `claude plugin validate ./plugins/jobpilot --strict` and `claude plugin validate . --strict`.
 - Bump `version` in `plugins/jobpilot/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
   `pyproject.toml` and `plugins/jobpilot/jobpilot/__init__.py` together for a release, and add a CHANGELOG entry.
+- Landing page: `python3 site/build.py` writes `site/dist/jobpilot.html` (fictional demo data and the
+  screenshots in `docs/images`, all inlined).
