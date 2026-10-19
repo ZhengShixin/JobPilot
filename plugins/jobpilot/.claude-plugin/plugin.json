@@ -1,0 +1,14 @@
+{
+  "name": "jobpilot",
+  "displayName": "JobPilot",
+  "version": "0.1.0",
+  "description": "AI job-search copilot: upload your resume and JobPilot designs your search, finds matching roles daily, scores each one with verbatim evidence, tailors your resume without inventing facts, tracks applications and shows it all on a local dashboard.",
+  "author": {
+    "name": "Shixin Zheng",
+    "url": "https://shixin-zheng.github.io"
+  },
+  "homepage": "https://github.com/ZhengShixin/JobPilot",
+  "repository": "https://github.com/ZhengShixin/JobPilot",
+  "license": "MIT",
+  "keywords": ["job-search", "career", "resume", "tailoring", "apify", "linkedin", "dashboard", "referrals"]
+}

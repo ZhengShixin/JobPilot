@@ -5,7 +5,7 @@ build/
 dist/
 .venv/
 .DS_Store
-evals/results/
+**/evals/results/
 # never commit a real workspace or secrets (a workspace belongs in its own private folder)
 .env
 /jobpilot.toml

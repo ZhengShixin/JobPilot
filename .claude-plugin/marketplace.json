@@ -1,0 +1,21 @@
+{
+  "name": "jobpilot",
+  "owner": {
+    "name": "Shixin Zheng",
+    "url": "https://shixin-zheng.github.io"
+  },
+  "metadata": {
+    "description": "JobPilot: an AI job-search copilot for Claude Code. Upload your resume; it finds matching roles every day, scores them with evidence, tailors your resume truthfully and tracks every application.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "jobpilot",
+      "source": "./plugins/jobpilot",
+      "description": "Resume-driven daily job discovery (Apify LinkedIn search), evidence-bound AI scoring, truthful resume tailoring, application tracking, Gmail progress tracking, alumni referral finder and a local dashboard.",
+      "version": "0.1.0",
+      "category": "productivity",
+      "tags": ["job-search", "career", "resume", "apify", "dashboard"]
+    }
+  ]
+}
