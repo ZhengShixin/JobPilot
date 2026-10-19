@@ -816,7 +816,7 @@ def _inbox(d):
         batches.setdefault(ago, []).append(msg)
 
     # Lumen Health AI: a recruiter's note, an invitation, your reply with times, then their confirmation
-    lumen = "Priya Shah <priya.shah@lumen-health.example>"
+    lumen = "Morgan Ellis <morgan.ellis@lumen-health.example>"
     mail(1, "Lumen Health AI", "recruiter_reply", 15, 11, lumen, "Your application: Data Scientist",
          "Your forecasting background caught our eye, and I have shared your resume with the hiring manager.",
          d.zh("The recruiter liked your forecasting work and passed your resume to the hiring manager; nothing to do "
@@ -970,7 +970,7 @@ def _referrals(d):
          "card_ready", True),
         ("Cobalt Systems", "Hannah", "Kim", "Engineering Manager, ML Platform", LSU, "B.S.", "Computer Science",
          ("2008", "2012"), ("Senior Software Engineer", "Northwind Analytics", "2012-07", "2018-04"), "kept", 79,
-         (4, 4, 3, 3, 5), "card_ready", True),
+         (4, 4, 3, 3, 5), "emailed", True),
         ("Cobalt Systems", "Omar", "Haddad", "Data Scientist", NIT, "M.S.", "Statistics", ("2017", "2019"),
          ("Data Analyst", "Copperleaf Foods", "2019-07", "2021-09"), "kept", 74, (3, 4, 4, 4, 3), "accepted", True),
         ("Cobalt Systems", "Grace", "Liu", "PhD Intern, Applied Science", NIT, "Ph.D.", "Computer Science",
@@ -986,7 +986,7 @@ def _referrals(d):
          False),
     ]
     stage_history = {
-        "connect_sent": ["connect_sent"], "accepted": ["connect_sent", "accepted"],
+        "connect_sent": ["connect_sent"], "emailed": ["email_sent"], "accepted": ["connect_sent", "accepted"],
         "replied": ["connect_sent", "accepted", "message_sent", "replied"],
         "chat_scheduled": ["connect_sent", "accepted", "message_sent", "replied", "chat_scheduled"],
         "referred": ["connect_sent", "accepted", "message_sent", "replied", "chat_scheduled", "chat_done", "referred"],
@@ -1048,7 +1048,10 @@ def _referrals(d):
         if has_card:
             card_at = util.stamp(found + timedelta(minutes=8))
             p["card_at"] = card_at
-            util.atomic_write_json(net / "cards" / ("%s.json" % pid), _card(d, p, school, degree, field, card_at))
+            c = _card(d, p, school, degree, field, card_at)
+            if first == "Priya":     # a card written before cards had a cold email: `jobpilot net email` adds one
+                c = {k: v for k, v in c.items() if not k.startswith("email_")}
+            util.atomic_write_json(net / "cards" / ("%s.json" % pid), c)
         people[pid] = p
         c = companies.setdefault(key, {"key": key, "name": company, "slug": util.slug(company).lower() + "-demo",
                                        "url": "", "searches": [], "removed": False})
@@ -1074,7 +1077,8 @@ def _referrals(d):
 
 
 def _net_word(d, ev):
-    zh = {"connect_sent": "已发送好友请求", "accepted": "已通过", "message_sent": "已发消息", "replied": "已回复",
+    zh = {"connect_sent": "已发送好友请求", "email_sent": "已发邮件", "accepted": "已通过", "message_sent": "已发消息",
+          "replied": "已回复",
           "chat_scheduled": "已约咖啡聊", "chat_done": "已聊完", "referred": "已内推"}
     return zh.get(ev, ev) if d.lang == "zh" else ev.replace("_", " ")
 
@@ -1106,6 +1110,20 @@ def _card(d, p, school, degree, field, card_at):
         "What do strong new hires on your team do in their first three months?",
         "Is there anyone else you would suggest I talk to about these roles?",
     ]
+    prior = p["experience"][-1] if len(p["experience"]) > 1 else None
+    path = ("Your move from %s at %s to %s is the kind of path I hope to follow." % (
+        prior["title"], prior["company"], p["title"]) if prior else
+        "Your work as %s is close to what I hope to do next." % p["title"])
+    email_subject = "%s alum curious about your work at %s" % (short, p["company"])
+    email_body = ("Hi %s,\n\nI came across your profile while learning about %s and noticed we both studied at %s. %s\n\n"
+                  "I'm Jordan, a machine learning engineer at Brightline Analytics, where I train ranking models in "
+                  "PyTorch and cut inference latency by 38%%. I'm exploring roles at %s and would love to understand "
+                  "how your team decides which models make it to production.\n\nWould you have 15 minutes for a short "
+                  "call in the next week or two? I have attached my resume in case it is useful. Thank you for "
+                  "considering it.\n\nBest regards," % (first, p["company"], school, path, p["company"]))
+    email_followup = ("Hi %s,\n\nI wanted to follow up on my note from last week in case it got buried. Even a few "
+                      "lines of advice about working at %s would mean a lot, and I am happy to work around your "
+                      "schedule.\n\nBest regards," % (first, p["company"]))
     if d.lang == "zh":
         why = "你们同为 %s 校友，对方的职位和你投的方向一致。" % school
         hooks = ["同校同专业：%s %s" % (degree, field), "对方之前在 %s" % (p["experience"][-1]["company"])]
@@ -1116,7 +1134,8 @@ def _card(d, p, school, degree, field, card_at):
         avoid = ["Do not ask for a referral in the first note", "Keep visas and work authorization out of it"]
     return {"pid": p["pid"], "note": note, "note_alumni": note_alumni, "message": message, "followup": followup,
             "questions": questions, "why": why, "hooks": hooks, "avoid": avoid, "warnings": [], "created_at": card_at,
-            "model": "demo", "note_limit": 200, "sign_name": "Jordan"}
+            "model": "demo", "note_limit": 200, "sign_name": "Jordan", "version": 1, "email_subject": email_subject,
+            "email_body": email_body, "email_followup": email_followup}
 
 
 def _tailored(d):

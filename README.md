@@ -37,7 +37,8 @@ JobPilot does the tedious parts and leaves the decisions — and the submit butt
   replies included, a one-line summary and the next step for every email, an interview time both sides agreed
   written straight onto the interview, and a recruiter's question kept on Today until you answer it.
 - **Referrals.** `/jobpilot:referrals <company>` finds alumni of your schools at a company, ranks who is most likely
-  to help, and drafts short personal notes — which you send yourself.
+  to help, and drafts short personal notes and a cold email (with a one-click Gmail draft) — which you send
+  yourself.
 - **A calm local dashboard.** Today's matches, the pool with score breakdowns, a kanban of your applications,
   referrals, spend and activity — in English or 中文, light or dark, on your laptop or phone.
 

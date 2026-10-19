@@ -1,4 +1,5 @@
-"""Background tasks started from the dashboard: a daily run, a tailoring run, a referral search.
+"""Background tasks started from the dashboard: a daily run, a tailoring run, a referral search, outreach cards and
+their cold emails.
 
 Each task runs `<workspace>/jobpilot <args>` in its own session, detached from the dashboard, through a tiny runner
 that records its pid and exit code in data/tasks/<id>.json, so a task's outcome survives a dashboard restart.
@@ -45,7 +46,7 @@ save(d)
 """
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 _PROCS = {}
-KINDS = ("daily", "tailor", "net-find", "net-cards", "review", "collect")
+KINDS = ("daily", "tailor", "net-find", "net-cards", "net-email", "review", "collect")
 
 
 def _dir(ws):

@@ -45,8 +45,8 @@ STATUS_GROUPS = {
 }
 COLUMNS = {"planned": "saved", "applied": "applied", "oa": "assessment", "interview": "interview", "offer": "offer",
            "rejected": "closed", "withdrawn": "closed", "closed": "closed"}
-NET_EVENTS = ("connect_sent", "accepted", "message_sent", "replied", "chat_scheduled", "chat_done", "referred",
-              "declined", "no_response", "dropped", "undo")
+NET_EVENTS = ("connect_sent", "email_sent", "accepted", "message_sent", "replied", "chat_scheduled", "chat_done",
+              "referred", "declined", "no_response", "dropped", "undo")
 FAVICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" '
            'fill="#256abf"/><path d="M7 17.5 25 8l-5.2 17-4.6-6.1L7 17.5Z" fill="#fff"/><path d="m15.2 18.9 4.6 6.1 '
            '1.1-9.4-5.7 3.3Z" fill="#cde2fb"/></svg>')
@@ -312,6 +312,9 @@ class Views:
                               "note_limit": int(ref.get("note_limit_premium" if plan_name == "premium"
                                                         else "note_limit_free") or 200),
                               "message_limit": int(ref.get("message_limit") or 700),
+                              "email_limits": {"email_subject": int(ref.get("email_subject_limit") or 80),
+                                               "email_body": int(ref.get("email_body_limit") or 1500),
+                                               "email_followup": int(ref.get("email_followup_limit") or 600)},
                               "profiles_per_company": int(ref.get("profiles_per_company") or 30)},
                 "features": {"network": _mod("network") is not None or (self.ws.network / "people.json").exists(),
                              "tailor": _mod("tailor") is not None, "inbox": _mod("inbox") is not None,
@@ -578,6 +581,8 @@ class Views:
         p = _person(self.ws, q.get("id") or "")
         if not p:
             raise ApiError(404, "no person %s" % q.get("id"))
+        sig = _call("network", "email_signature", self.ws, default=None)
+        p["email_signature"] = sig if sig is not None else [((self.ws.cfg.get("candidate") or {}).get("name") or "")]
         return p
 
     def tailored(self, q):
@@ -747,10 +752,24 @@ class Writes:
         self.ws.event("net", "writing outreach cards: %s" % company)
         return {"ok": True, "task": task}
 
+    def net_email(self, body):
+        self._no_demo("email writing")
+        pid = _text(body, "pid", 12, required=True).upper()
+        if not re.fullmatch(r"P\d{3,6}", pid):
+            raise ApiError(400, "pid must look like P0007")
+        argv = ["net", "email", pid]
+        feedback = _text(body, "feedback", 1000)
+        if feedback:
+            argv += ["--feedback", feedback]
+        task = tasks.start(self.ws, "net-email", argv, target=pid)
+        self.ws.event("net", "writing the cold email for %s" % pid, pid=pid)
+        return {"ok": True, "task": task}
+
 
 WRITES = {"posting/mark": "posting_mark", "app/create": "app_create", "app/event": "app_event",
           "inbox/answered": "inbox_answered", "inbox/invite": "inbox_invite", "tailor/start": "tailor_start",
-          "run/daily": "run_daily", "net/mark": "net_mark", "net/find": "net_find", "net/cards": "net_cards"}
+          "run/daily": "run_daily", "net/mark": "net_mark", "net/find": "net_find", "net/cards": "net_cards",
+          "net/email": "net_email"}
 
 
 # ---------------------------------------------------------------- page

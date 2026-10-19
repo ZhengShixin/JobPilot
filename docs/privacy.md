@@ -39,6 +39,10 @@ demos).
 - read the Apify token into the conversation;
 - put a fact about you into a resume or message that `profile.md` does not contain.
 
+The cold email on a referral card is a draft for an address you found yourself: its "Open in Gmail" button only
+opens Gmail's compose window in your browser with the text filled in (an address you type goes into that link and
+nowhere else), and you decide whether to send it.
+
 Inside a workspace, the plugin's guard hook (`plugins/jobpilot/hooks/guard.py`) enforces the email, LinkedIn,
 ledger and token rules for every Claude Code tool call.
 

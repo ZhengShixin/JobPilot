@@ -191,17 +191,18 @@ jobpilot tailor list [-h] [--json]
 
 ### `jobpilot net`
 
-Alumni referral finder: find, score, cards, run, list, show, mark, due.
+Alumni referral finder: find, score, cards, email, run, list, show, mark, due.
 
 ```text
 jobpilot net find [-h] [--json] [--url URL] [--n N] [--titles [TITLES ...]] [--dry-run] company
 jobpilot net score [-h] [--json] company
 jobpilot net cards [-h] [--json] [--n N] company
+jobpilot net email [-h] [--json] [--feedback FEEDBACK] pid
 jobpilot net run [-h] [--json] [--url URL] [--n N] [--cards CARDS] [--titles [TITLES ...]] company
 jobpilot net list [-h] [--json] [--all] [company]
 jobpilot net companies [-h] [--json]
 jobpilot net show [-h] [--json] pid
-jobpilot net mark [-h] [--json] [--note NOTE] pid {connect_sent,accepted,message_sent,replied,chat_scheduled,chat_done,referred,declined,no_response,dropped,undo}
+jobpilot net mark [-h] [--json] [--note NOTE] pid {connect_sent,email_sent,accepted,message_sent,replied,chat_scheduled,chat_done,referred,declined,no_response,dropped,undo}
 jobpilot net remove [-h] [--json] [--reason REASON] company
 jobpilot net restore [-h] [--json] company
 jobpilot net due [-h] [--json]

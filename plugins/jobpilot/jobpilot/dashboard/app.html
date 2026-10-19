@@ -325,6 +325,12 @@ textarea.input{height:auto;padding:8px 10px;resize:vertical;min-height:60px}
 .count{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .count.over{color:var(--critical-text);font-weight:650}
 ol.qs{margin:0;padding-left:20px;display:grid;gap:5px;font-size:13.5px}
+.email-box{display:grid;gap:8px}
+.email-subj{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px}
+.email-subj .k{color:var(--muted);font-size:12.5px}
+.email-subj .right,.email-acts{margin-left:auto;display:flex;gap:6px;align-items:center}
+.email-acts{justify-content:flex-end}
+.email-note{font-size:12px;color:var(--muted)}
 /* ---------- search tab */
 .meter-card .big{font-size:26px;font-weight:650;letter-spacing:-.02em}
 .meter-card .big small{font-size:13px;color:var(--muted);font-weight:500;margin-left:4px}
@@ -580,9 +586,14 @@ en: {
   p_why:'Why this person', p_scores:'Scores', role_s:'Role fit', alumni_s:'Alumni', path_s:'Path', reply_s:'Likely to reply', help_s:'Can help',
   card_note:'Connection note', card_alumni:'Alumni version', card_message:'After they accept', card_followup:'Follow-up',
   card_questions:'Coffee chat questions', hooks:'Talking points', avoid:'Avoid', copy:'Copy', copied:'Copied', chars:'{n}/{max}',
+  card_email:'Cold email', email_subject:'Subject', email_to:'Their email address (stays on this page)', open_gmail:'Open in Gmail',
+  email_note:'JobPilot never sends email: Gmail opens a draft with this text. Attach your resume and send it yourself.',
+  email_follow:'Follow-up email (a week later, same thread)', no_email:'No cold email on this card yet.', write_email:'Write the email version',
+  rewrite_email:'Rewrite the email', email_fb:'What to change (optional)', resume_att:'Resume attached',
   no_card:'No card yet — run “Write cards” for this company.', profile:'Profile', history:'History', education:'Education', experience:'Experience',
   m_connect_sent:'Sent the request', m_accepted:'Accepted', m_message_sent:'Sent the message', m_replied:'Replied', m_chat_scheduled:'Chat scheduled',
   m_chat_done:'Chat done', m_referred:'Referred me', m_declined:'Declined', m_no_response:'No response', m_dropped:'Drop', m_undo:'Undo last',
+  m_email_sent:'Sent the email', ps_emailed:'Emailed',
   ps_new:'New', ps_card_ready:'Card ready', ps_connect_sent:'Request sent', ps_accepted:'Connected', ps_messaged:'Messaged',
   ps_replied:'Replied', ps_chat_scheduled:'Chat scheduled', ps_chat_done:'Chat done', ps_referred:'Referred', ps_declined:'Declined',
   ps_no_response:'No response', ps_dropped:'Dropped', link_hidden:'Profile links are hidden in the demo.', open_li:'Open LinkedIn profile',
@@ -600,7 +611,7 @@ en: {
   key:'Key', sign_in:'Sign in', bad_key:'That key does not match.',
   err:'Something went wrong: {msg}', saved:'Saved', started:'Started in the background — this page updates when it finishes.',
   task_done:'{kind} finished', task_failed:'{kind} failed — see data/logs', offline:'Cannot reach the dashboard. Is `jobpilot dashboard` still running?',
-  task_daily:'Daily run', task_tailor:'Tailoring', 'task_net-find':'Alumni search', 'task_net-cards':'Card writing',
+  task_daily:'Daily run', task_tailor:'Tailoring', 'task_net-find':'Alumni search', 'task_net-cards':'Card writing', 'task_net-email':'Email writing',
   static_write:'This preview is read-only — install JobPilot to use it for real.',
   now:'just now', today:'Today', yesterday:'Yesterday', score:'score', none:'—',
 },
@@ -673,9 +684,14 @@ zh: {
   p_why:'为什么推荐', p_scores:'评分', role_s:'岗位相关', alumni_s:'校友关系', path_s:'背景相似', reply_s:'回复可能', help_s:'帮助能力',
   card_note:'好友请求附言', card_alumni:'校友版本', card_message:'通过后发送', card_followup:'跟进消息',
   card_questions:'咖啡聊问题', hooks:'可以聊的话题', avoid:'避免', copy:'复制', copied:'已复制', chars:'{n}/{max}',
+  card_email:'冷邮件', email_subject:'主题', email_to:'对方邮箱（只留在本页）', open_gmail:'在 Gmail 中打开',
+  email_note:'JobPilot 不会替你发邮件：Gmail 会打开一封写好的草稿，附上简历后由你自己发送。',
+  email_follow:'跟进邮件（一周后，在同一封邮件里回复）', no_email:'这张卡片还没有冷邮件。', write_email:'写邮件版',
+  rewrite_email:'重写邮件', email_fb:'想怎么改（可选）', resume_att:'附简历',
   no_card:'还没有卡片——为这家公司点“生成卡片”。', profile:'资料', history:'记录', education:'教育', experience:'经历',
   m_connect_sent:'已发请求', m_accepted:'已通过', m_message_sent:'已发消息', m_replied:'已回复', m_chat_scheduled:'已约聊',
   m_chat_done:'已聊完', m_referred:'已内推', m_declined:'婉拒', m_no_response:'无回复', m_dropped:'放弃', m_undo:'撤销上一步',
+  m_email_sent:'已发邮件', ps_emailed:'已发邮件',
   ps_new:'新', ps_card_ready:'卡片就绪', ps_connect_sent:'已发请求', ps_accepted:'已连接', ps_messaged:'已发消息',
   ps_replied:'已回复', ps_chat_scheduled:'已约聊', ps_chat_done:'已聊', ps_referred:'已内推', ps_declined:'婉拒',
   ps_no_response:'无回复', ps_dropped:'已放弃', link_hidden:'演示中隐藏了个人主页链接。', open_li:'打开 LinkedIn 主页',
@@ -693,7 +709,7 @@ zh: {
   key:'密钥', sign_in:'登录', bad_key:'密钥不对。',
   err:'出错了：{msg}', saved:'已保存', started:'已在后台开始，完成后页面会自动更新。',
   task_done:'{kind}已完成', task_failed:'{kind}失败——查看 data/logs', offline:'连不上面板。`jobpilot dashboard` 还在运行吗？',
-  task_daily:'每日运行', task_tailor:'定制简历', 'task_net-find':'校友搜索', 'task_net-cards':'生成卡片',
+  task_daily:'每日运行', task_tailor:'定制简历', 'task_net-find':'校友搜索', 'task_net-cards':'生成卡片', 'task_net-email':'写邮件',
   static_write:'这是只读预览——安装 JobPilot 才能真正使用。',
   now:'刚刚', today:'今天', yesterday:'昨天', score:'分', none:'—',
 }};
@@ -1400,6 +1416,35 @@ function evForm(ev, id) {
       <button class="btn btn-sm btn-ghost" data-act="ev-cancel">${t('cancel')}</button></div></div>`);
   box.scrollIntoView({block: 'nearest'});
 }
+function gmailCompose(to, subject, body) {
+  const enc = encodeURIComponent;
+  return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=' + enc(to || '') + '&su=' + enc(subject || '') + '&body=' + enc(body || '');
+}
+function emailBlock(p, c) {
+  const lims = (S.referrals || {}).email_limits || {email_subject: 80, email_body: 1500, email_followup: 600};
+  const count = (text, max) => h`<span class="count ${text.length > max ? 'over' : ''}">${t('chars', {n: text.length, max})}</span>`;
+  const copyBtn = text => h`<button class="btn btn-sm" data-act="copy" data-text="${text}">${icon('copy', 'icon-sm')}${t('copy')}</button>`;
+  if (!c.email_body) {
+    return h`<div class="note-head"><h3>${t('card_email')}</h3></div><div class="muted">${t('no_email')}</div>
+      <div class="acts" style-hook><button class="btn btn-sm" data-act="net-email" data-pid="${p.pid}">${icon('mail', 'icon-sm')}${t('write_email')}</button></div>`;
+  }
+  const sig = (p.email_signature || []).filter(Boolean).join('\n');
+  const body = c.email_body + (sig ? '\n' + sig : ''), fu = c.email_followup + (sig ? '\n' + sig : '');
+  return h`<div class="note-head"><h3>${t('card_email')}</h3><div class="right"><span class="chip out">${icon('doc', 'icon-sm')}${t('resume_att')}</span></div></div>
+    <div class="email-box">
+      <div class="email-subj"><span class="k">${t('email_subject')}</span><b>${c.email_subject}</b>
+        <span class="right">${count(c.email_subject, lims.email_subject)}${copyBtn(c.email_subject)}</span></div>
+      <div class="note-box">${body}</div>
+      <div class="email-acts">${count(c.email_body, lims.email_body)}${copyBtn(body)}</div>
+      <div class="form-row"><input class="input" id="em-to" type="email" autocomplete="off" placeholder="${t('email_to')}">
+        <a class="btn btn-primary btn-sm" id="em-gmail" href="${gmailCompose('', c.email_subject, body)}" target="_blank" rel="noopener noreferrer"
+          data-subject="${c.email_subject}" data-body="${body}">${icon('ext', 'icon-sm')}${t('open_gmail')}</a></div>
+      <div class="email-note">${t('email_note')}</div></div>
+    <div class="note-head"><h3>${t('email_follow')}</h3><div class="right">${count(c.email_followup || '', lims.email_followup)}${copyBtn(fu)}</div></div>
+    <div class="note-box">${fu}</div>
+    <details style-hook><summary>${t('rewrite_email')}</summary><div class="form-row"><input class="input" id="em-fb" placeholder="${t('email_fb')}">
+      <button class="btn btn-sm" data-act="net-email" data-pid="${p.pid}">${t('rewrite_email')}</button></div></details>`;
+}
 async function openPerson(pid) {
   const p = await api('person', {id: pid});
   const c = p.card;
@@ -1407,7 +1452,8 @@ async function openPerson(pid) {
   const subs = ['role', 'alumni', 'path', 'reply', 'help'];
   const block = (key, text, max) => text ? h`<div class="note-head"><h3>${t(key)}</h3><div class="right">${max ? h`<span class="count ${text.length > max ? 'over' : ''}">${t('chars', {n: text.length, max})}</span>` : ''}
     <button class="btn btn-sm" data-act="copy" data-text="${text}">${icon('copy', 'icon-sm')}${t('copy')}</button></div></div><div class="note-box">${text}</div>` : '';
-  const NEXT = {new: ['connect_sent', 'dropped'], card_ready: ['connect_sent', 'dropped'], connect_sent: ['accepted', 'no_response', 'dropped'],
+  const NEXT = {new: ['connect_sent', 'email_sent', 'dropped'], card_ready: ['connect_sent', 'email_sent', 'dropped'],
+    connect_sent: ['accepted', 'no_response', 'dropped'], emailed: ['replied', 'no_response', 'dropped'],
     accepted: ['message_sent', 'replied', 'dropped'], messaged: ['replied', 'no_response'], replied: ['chat_scheduled', 'referred', 'declined'],
     chat_scheduled: ['chat_done', 'referred'], chat_done: ['referred', 'declined', 'no_response']};
   const marks = (NEXT[p.stage || 'new'] || []).concat((p.history || []).length ? ['undo'] : []);
@@ -1423,6 +1469,7 @@ async function openPerson(pid) {
       <span class="meter"><i data-w="${(p.sub[k] || 0) * 20}"></i></span><span class="v">${p.sub[k] || 0}<small>/5</small></span></div>
       ${(p.evidence || {})[k] ? h`<div class="quote"><span class="src">${t('profile')}</span><q>${p.evidence[k]}</q></div>` : ''}</div>`)}</section>` : ''}
     <section class="sec">${c ? h`${block('card_note', c.note, lim)}${block('card_alumni', c.note_alumni, lim)}${block('card_message', c.message, mlim)}${block('card_followup', c.followup, 0)}
+      ${emailBlock(p, c)}
       ${(c.questions || []).length ? h`<div class="note-head"><h3>${t('card_questions')}</h3><div class="right"><button class="btn btn-sm" data-act="copy" data-text="${c.questions.join('\n')}">${icon('copy', 'icon-sm')}${t('copy')}</button></div></div>
         <ol class="qs">${c.questions.map(q => h`<li>${q}</li>`)}</ol>` : ''}
       ${(c.hooks || []).length ? h`<div class="note-head"><h3>${t('hooks')}</h3></div><div class="chips">${c.hooks.map(x => h`<span class="chip">${x}</span>`)}</div>` : ''}
@@ -1434,6 +1481,7 @@ async function openPerson(pid) {
     ${(p.history || []).length ? h`<section class="sec"><h3>${t('history')}</h3><div class="tl">${p.history.slice().reverse().map(x => h`<div class="tl-i"><span class="d">${dateShort(x.at)}</span><i class="m"></i><span>${t('m_' + x.event)}${x.note ? h`<span class="n">${x.note}</span>` : ''}</span></div>`)}</div></section>` : ''}
   </div>
   ${p.triage !== 'skip' && marks.length ? h`<div class="d-foot"><div class="acts">${marks.map(m => h`<button class="btn btn-sm ${m === 'referred' ? 'btn-primary' : ['declined', 'no_response', 'dropped', 'undo'].includes(m) ? 'btn-ghost' : ''}" data-act="net-mark" data-pid="${p.pid}" data-ev="${m}">${t('m_' + m)}</button>`)}</div></div>` : ''}`, 'person', pid);
+  $('#drawer').querySelectorAll('[style-hook]').forEach(x => { x.removeAttribute('style-hook'); x.style.marginTop = '10px'; });
 }
 
 /* ------------------------------------------------------------------ actions */
@@ -1516,6 +1564,7 @@ async function act(el, ev) {
     case 'goto-refs': { const ck = (state.cache.refs && (state.cache.refs.companies || []).find(c => c.name === el.dataset.company)); closeDrawer(); if (ck) state.refsCompany = ck.key; return setTab('refs'); }
     case 'net-find': { const company = $('#nf-company').value.trim(); if (!company) return; const r = await post('net/find', {company, url: $('#nf-url').value.trim()}); if (r) { toast(t('started')); state.tasks.push(r.task); } return; }
     case 'net-cards': { const r = await post('net/cards', {company: el.dataset.company}); if (r) { toast(t('started')); state.tasks.push(r.task); } return; }
+    case 'net-email': { const fb = $('#em-fb'); const r = await post('net/email', {pid: el.dataset.pid, feedback: fb ? fb.value.trim() : ''}); if (r) { toast(t('started')); state.tasks.push(r.task); updateChrome(state.cache.summary); } return; }
     case 'net-mark': { const r = await post('net/mark', {pid: el.dataset.pid, event: el.dataset.ev}); if (r) { toast(t('saved')); afterWrite(); } return; }
     case 'copy': return copyText(el.dataset.text, el);
     case 'filtered-kind': state.filteredKind = el.dataset.kind; return renderSearch();
@@ -1554,6 +1603,7 @@ document.addEventListener('keydown', e => {
 let searchTimer;
 document.addEventListener('input', e => {
   if (e.target.id === 'pool-q') { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.poolq.q = e.target.value; state.poolq.limit = 50; renderPool(); }, 220); }
+  if (e.target.id === 'em-to') { const a = $('#em-gmail'); if (a) a.href = gmailCompose(e.target.value.trim(), a.dataset.subject, a.dataset.body); }
   if (e.target.id === 'pool-min') { const o = e.target.nextElementSibling; if (o) o.textContent = fmtNum(+e.target.value, 1); clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.poolq.min = +e.target.value; renderPool(); }, 180); }
 });
 document.addEventListener('change', e => { if (e.target.id === 'pool-status') { state.poolq.status = e.target.value; state.poolq.limit = 50; renderPool(); } });

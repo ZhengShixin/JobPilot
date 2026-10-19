@@ -92,7 +92,9 @@
 
 `actor` (`harvestapi/linkedin-company-employees`), `scraper_mode` ("Full ($8 per 1k)"), `locations`,
 `profiles_per_company` (30), `cards_per_company` (5), `budget_usd_per_company` (0.40), `linkedin_plan` (`free`:
-200-character notes, `premium`: 300), `message_limit` (700), `sign_name`, `model`, `writer_model`.
+200-character notes, `premium`: 300), `message_limit` (700), `sign_name`, `model`, `writer_model`; the cold email on
+each card: `email_subject_limit` (80), `email_body_limit` (1500), `email_followup_limit` (600) and `email_signature`
+("" = `candidate.name`; the lines JobPilot adds after "Best regards,").
 
 ## `[inbox]`, `[followup]`, `[dashboard]`, `[notify]`
 

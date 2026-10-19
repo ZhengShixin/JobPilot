@@ -268,6 +268,11 @@ def respond(task, system, schema):
 
 WRITER = r'''
 def respond(task, system, schema):
+    if "note" not in schema.get("properties", {}):          # write_email: the cold email fields only
+        out = dict(EMAIL)
+        if "shorter subject please" in task:
+            out["email_subject"] = "Lakeside State alum with a question for you"
+        return out
     fixed = "previous draft broke these checks" in task
     note = ("Hi Ana, I am a fellow Lakeside State graduate working on ranking models and would value connecting "
             "with you. Jordan")
@@ -285,8 +290,20 @@ def respond(task, system, schema):
                           "How do teams decide which models go to production?",
                           "How did you join Acme Robotics, and do referrals help new grads?"],
             "why": "Same school and the same function as the open role.",
-            "hooks": ["Lakeside State M.S. Computer Science"], "avoid": []}
+            "hooks": ["Lakeside State M.S. Computer Science"], "avoid": [], **EMAIL}
 '''
+
+EMAIL = {"email_subject": "Lakeside State alum curious about ML engineering at Acme Robotics",
+         "email_body": ("Hi Ana,\n\nI noticed we both studied at Lakeside State, and your work on machine learning at "
+                        "Acme Robotics is close to what I hope to do next. I build ranking models in PyTorch at "
+                        "Brightline Analytics and I am exploring ML engineering roles at Acme Robotics.\n\nHow does "
+                        "your team decide which models go to production? Would you have 15 minutes for a short call in "
+                        "the next week or two? I have attached my resume in case it is useful. Thank you for "
+                        "considering it.\n\nBest regards,"),
+         "email_followup": ("Hi Ana,\n\nI wanted to follow up on my note from last week in case it got buried. A few "
+                            "lines of advice would mean a lot.\n\nBest regards,")}
+EMAIL_TEXT = "EMAIL = %r\n" % (EMAIL,)
+WRITER = EMAIL_TEXT + WRITER
 
 
 class ScoreCards(Base):
@@ -353,7 +370,7 @@ class ScoreCards(Base):
         p = self.people()["Ana Lopez"]
         good = {"note": "Hi Ana, fellow Lakeside State alum here. Jordan", "note_alumni": "Hello Ana, I study ML. Jordan",
                 "message": "m" * 90, "followup": "Hi Ana, following up on my note. Jordan",
-                "questions": ["What does your team at Acme Robotics work on?"]}
+                "questions": ["What does your team at Acme Robotics work on?"], **EMAIL}
         self.assertEqual(network.lint_card(self.ws, good, p, "", support.PROFILE), [])
         bad = dict(good, note="Hi Ana, I need visa sponsorship, see https://x.io and [Company]. I improved revenue "
                               "by 4,500 units using Scala.")
@@ -363,6 +380,50 @@ class ScoreCards(Base):
         self.assertNotIn("38", problems)
         same = dict(good, note_alumni="Hi Ana, fellow Lakeside State alum here! Jordan")
         self.assertIn("note and note_alumni say the same thing", network.lint_card(self.ws, same, p, "", support.PROFILE))
+
+
+    def test_lint_checks_the_cold_email(self):
+        p = self.people()["Ana Lopez"]
+        lint = lambda **kw: " | ".join(network.lint_card(self.ws, dict(EMAIL, **kw), p, "", support.PROFILE,  # noqa
+                                                          email_only=True))
+        self.assertEqual(lint(), "")
+        problems = lint(email_body="Hi Ana, could we talk sometime next week? Thanks so much for your time!")
+        self.assertIn("must end with 'Best regards,'", problems)
+        self.assertIn("does not say the resume is attached", problems)
+        self.assertIn("email_subject: missing", lint(email_subject=""))
+        self.assertIn("link", lint(email_followup="See https://example.com for more.\n\nBest regards,"))
+        self.assertIn("sensitive", lint(email_subject="Lakeside State alum asking about visa sponsorship"))
+
+    def test_cards_carry_a_cold_email(self):
+        network.score(self.ws, "Acme Robotics", log=lambda *_: None)
+        network.cards(self.ws, "Acme Robotics", log=lambda *_: None)
+        c = network.person(self.ws, self.people()["Ana Lopez"]["pid"])["card"]
+        self.assertEqual((c["version"], c["email_subject"]), (1, EMAIL["email_subject"]))
+        self.assertTrue(c["email_body"].endswith("Best regards,"))
+        self.assertEqual(network.email_signature(self.ws), ["Jordan Rivera"])
+
+    def test_write_email_for_an_older_card(self):
+        network.score(self.ws, "Acme Robotics", log=lambda *_: None)
+        network.cards(self.ws, "Acme Robotics", log=lambda *_: None)
+        pid = self.people()["Ana Lopez"]["pid"]
+        legacy = {k: v for k, v in network.card(self.ws, pid).items() if not k.startswith("email_") and k != "version"}
+        util.atomic_write_json(self.ws.network / "cards" / ("%s.json" % pid), legacy)
+        c = network.write_email(self.ws, pid, feedback="shorter subject please", log=lambda *_: None)
+        self.assertEqual((c["version"], c["email_subject"]), (2, "Lakeside State alum with a question for you"))
+        self.assertEqual(c["note"], legacy["note"])                          # the LinkedIn texts stay
+        self.assertEqual(c["email_feedback"], "shorter subject please")
+        self.assertEqual(util.read_json(self.ws.network / "cards" / ("%s.v1.json" % pid)), legacy)
+        code, text = run_cli(self.ws, "net", "email", pid)
+        self.assertEqual(code, 0)
+        self.assertIn("Subject: " + EMAIL["email_subject"], text)
+        self.assertIn("Best regards,\nJordan Rivera", text)
+        self.assertEqual(network.card(self.ws, pid)["version"], 3)
+        cfg = support.CONFIG + '\n[referrals]\nemail_signature = "Jordan Rivera\\nML engineer"\n'
+        (self.ws.root / "jobpilot.toml").write_text(cfg)
+        self.ws.reload()
+        self.assertEqual(network.email_signature(self.ws), ["Jordan Rivera", "ML engineer"])
+        with self.assertRaises(util.JobPilotError):
+            network.write_email(self.ws, self.people()["Ira Moe"]["pid"])    # no card yet
 
 
 class Marks(Base):
@@ -408,6 +469,16 @@ class Marks(Base):
         self.assertEqual(network.due(self.ws), [])
         self.env(JOBPILOT_NOW="2026-11-20T15:00:00Z")
         self.assertIn("follow-up", network.due(self.ws)[0]["action"])
+
+    def test_email_sent_and_its_follow_up(self):
+        network._update_people(self.ws, {self.ana: {"stage": "card_ready", "card_at": "2026-10-19T10:00:00+00:00"}})
+        p = network.mark(self.ws, self.ana, "email_sent", note="to a public address")
+        self.assertEqual(p["stage"], "emailed")
+        self.assertEqual(network.due(self.ws), [])
+        self.env(JOBPILOT_NOW="2026-10-27T15:00:00Z")
+        self.assertIn("follow-up email from the card in the same thread", network.due(self.ws)[0]["action"])
+        network.mark(self.ws, self.ana, "replied")
+        self.assertEqual(network.due(self.ws)[0]["stage"], "replied")
 
     def test_remove_and_restore_hide_people(self):
         network.remove_company(self.ws, "Acme Robotics", "not interested")

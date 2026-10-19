@@ -20,7 +20,7 @@ Referrals: `/jobpilot:referrals <company>`.
 **CLI** (`jobpilot <command>` inside Claude Code, `./jobpilot <command>` in a terminal): init, doctor, config check,
 token set|status|clear, pause/unpause, plan show|check, collect [--dry-run], review, daily, queue, pool
 list|show|mark|add, stats, app add|event|list|show|due, tailor prepare|build|auto|audit|lint|list, resume
-text|paragraphs|build-docx, net find|score|cards|run|list|show|mark|due|remove|restore, inbox
+text|paragraphs|build-docx, net find|score|cards|email|run|list|show|mark|due|remove|restore, inbox
 brief|apply|link|dismiss|unmatched|waiting|answered|invite|status|scan, brief, events, dashboard, schedule
 install|remove|status, demo <folder>, version. `jobpilot <command> --help` shows options.
 

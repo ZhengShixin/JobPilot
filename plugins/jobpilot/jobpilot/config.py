@@ -90,6 +90,10 @@ DEFAULTS = {
         "note_limit_free": 200,
         "note_limit_premium": 300,
         "message_limit": 700,
+        "email_subject_limit": 80,     # the cold email on each card (you send it yourself, resume attached)
+        "email_body_limit": 1500,
+        "email_followup_limit": 600,
+        "email_signature": "",         # lines after "Best regards," ("" = candidate.name)
         "sign_name": "",
         "model": "sonnet",
         "writer_model": "opus",

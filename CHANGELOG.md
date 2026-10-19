@@ -13,6 +13,13 @@
   (`owner_reply`) and settle a waiting recruiter mail; an interview without a time says "You replied …; waiting for
   them to confirm a time" until it is agreed. New key `inbox.my_addresses`; `jobpilot app event … --rescheduled`
   replaces the open interview's time.
+- Every referral card has a cold email (subject, body, a follow-up email) for an address you found yourself: the
+  body says your resume is attached and ends with "Best regards,", JobPilot adds your signature
+  (`referrals.email_signature`, else your name), and the usual checks apply (limits, claims, numbers, links,
+  placeholders, sensitive topics). The person drawer has copy buttons and an "Open in Gmail" draft link (an address
+  you type stays on the page); `jobpilot net email P0007 [--feedback ...]` adds the email to an older card (a new
+  card version). Mark `email_sent`; the follow-up comes due after 7 days. Nothing is sent and no address is looked
+  up.
 
 ### Fixed
 

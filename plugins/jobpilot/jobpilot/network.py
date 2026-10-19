@@ -7,14 +7,18 @@ conversation would be, with outreach drafts that you send yourself.
                          intern; recruiters are kept aside as contacts (often the best first contact for new grads)
     score(ws, company)   role net-review (headless Claude, no tools): five 0-5 sub-scores, each with a verbatim quote
                          from the profile that the code checks; total 0-100
-    cards(ws, company)   role net-writer: two connection notes, a message, a follow-up and coffee-chat questions,
-                         checked for length, sensitive topics, invented numbers, links and placeholders
-    mark(ws, pid, event) what you did on LinkedIn (connect_sent, accepted, replied ...); `undo` takes the last one back
+    cards(ws, company)   role net-writer: two connection notes, a message, a follow-up, a cold email with its
+                         follow-up and coffee-chat questions, checked for length, sensitive topics, invented numbers,
+                         links and placeholders
+    write_email(ws, pid) the cold email for a card written before cards had one (or again, with your feedback)
+    mark(ws, pid, event) what you did (connect_sent, email_sent, accepted, replied ...); `undo` takes the last one back
 
 Read this before using it: collecting LinkedIn profiles through a third-party scraper (an Apify actor) may violate
 LinkedIn's User Agreement, and the people found never agreed to be on your list. You decide whether to use this
 module. JobPilot never logs into LinkedIn, never sends invitations or messages, never looks up email addresses, and
-keeps everything it finds in your workspace (data/network/), never uploaded anywhere.
+keeps everything it finds in your workspace (data/network/), never uploaded anywhere. The cold email is a draft you
+send from your own mailbox, to an address you found yourself, with your resume attached; JobPilot adds your signature
+after "Best regards," and never sends it.
 """
 import math
 import re
@@ -27,11 +31,14 @@ from . import budget, claude, config, ledger, schema as S, util
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 SUBS = ("role", "alumni", "path", "reply", "help")
 WEIGHTS = {"role": 0.30, "alumni": 0.25, "path": 0.15, "reply": 0.15, "help": 0.15}
-STAGES = ("new", "card_ready", "connect_sent", "accepted", "messaged", "replied", "chat_scheduled", "chat_done",
-          "referred", "declined", "no_response", "dropped")
-EVENT_STAGE = {"connect_sent": "connect_sent", "accepted": "accepted", "message_sent": "messaged",
-               "replied": "replied", "chat_scheduled": "chat_scheduled", "chat_done": "chat_done",
-               "referred": "referred", "declined": "declined", "no_response": "no_response", "dropped": "dropped"}
+STAGES = ("new", "card_ready", "connect_sent", "emailed", "accepted", "messaged", "replied", "chat_scheduled",
+          "chat_done", "referred", "declined", "no_response", "dropped")
+EVENT_STAGE = {"connect_sent": "connect_sent", "email_sent": "emailed", "accepted": "accepted",
+               "message_sent": "messaged", "replied": "replied", "chat_scheduled": "chat_scheduled",
+               "chat_done": "chat_done", "referred": "referred", "declined": "declined", "no_response": "no_response",
+               "dropped": "dropped"}
+EMAIL_FIELDS = ("email_subject", "email_body", "email_followup")
+SIGN_OFF = "Best regards,"
 MARKS = tuple(EVENT_STAGE) + ("undo",)
 TRIAGE_ORDER = {"kept": 0, "recruiter": 1, "skip": 2}
 START_FEE = 0.02
@@ -136,6 +143,20 @@ def note_limit(ws):
 def sign_name(ws):
     r, cand = _cfg(ws), ws.cfg.get("candidate") or {}
     return (r.get("sign_name") or (cand.get("name") or "").split(" ")[0] or "").strip()
+
+
+def email_limits(ws):
+    r = _cfg(ws)
+    return {"email_subject": int(r.get("email_subject_limit") or 80),
+            "email_body": int(r.get("email_body_limit") or 1500),
+            "email_followup": int(r.get("email_followup_limit") or 600)}
+
+
+def email_signature(ws):
+    """The lines JobPilot puts after a cold email's "Best regards," (the writer never signs): referrals.email_signature,
+    else your name."""
+    text = str(_cfg(ws).get("email_signature") or (ws.cfg.get("candidate") or {}).get("name") or "").strip()
+    return [line.strip() for line in text.splitlines() if line.strip()]
 
 
 def _language_name(ws):
@@ -818,11 +839,21 @@ def score(ws, company, log=print, max_batches=None):
 
 # ---------------------------------------------------------------- cards
 
-def card_schema(note_max, message_max, followup_max):
+def _email_props(limits):
+    return {"email_subject": S.string(15, limits["email_subject"]), "email_body": S.string(300, limits["email_body"]),
+            "email_followup": S.string(60, limits["email_followup"])}
+
+
+def card_schema(note_max, message_max, followup_max, email=None):
     return S.obj({"note": S.string(30, note_max), "note_alumni": S.string(30, note_max),
                   "message": S.string(80, message_max), "followup": S.string(30, followup_max),
                   "questions": S.array(S.string(15, 300), 6, 4), "why": S.string(4, 400),
-                  "hooks": S.array(S.string(4, 200), 4, 1), "avoid": S.array(S.string(2, 200), 4)})
+                  "hooks": S.array(S.string(4, 200), 4, 1), "avoid": S.array(S.string(2, 200), 4),
+                  **_email_props(email or {"email_subject": 80, "email_body": 1500, "email_followup": 600})})
+
+
+def email_schema(limits):
+    return S.obj(_email_props(limits))
 
 
 def fact_pack(ws):
@@ -847,13 +878,33 @@ def _bare(text, person):
     return re.sub(r"\W+", " ", t).strip()
 
 
-def lint_card(ws, c, person, ctx, facts, others=()):
-    """[problems] of a writer output; empty means it can be shown with copy buttons."""
+def _email_shape(c):
+    """The cold email's own rules: every field written, the body and the follow-up end with "Best regards," (the
+    signature is added for you), and the body says the resume is attached."""
+    out = []
+    for key in EMAIL_FIELDS:
+        text = (c.get(key) or "").strip()
+        if not text:
+            out.append("%s: missing" % key)
+        elif key != "email_subject" and not text.endswith(SIGN_OFF):
+            out.append("%s: must end with %r on its own line (the signature is added for you)" % (key, SIGN_OFF))
+    body = c.get("email_body") or ""
+    if body.strip() and not (re.search(r"(?i)\battach", body) and re.search(r"(?i)\b(resume|résumé|cv)\b", body)):
+        out.append("email_body: does not say the resume is attached")
+    return out
+
+
+def lint_card(ws, c, person, ctx, facts, others=(), email_only=False):
+    """[problems] of a writer output; empty means it can be shown with copy buttons. email_only: the output holds only
+    the cold email (write_email)."""
     r = _cfg(ws)
     limits = {"note": note_limit(ws), "note_alumni": note_limit(ws), "message": int(r.get("message_limit") or 700),
               "followup": int(r.get("followup_limit") or 300)}
-    texts = [(k, c.get(k) or "", limits[k]) for k in ("note", "note_alumni", "message", "followup")]
-    texts += [("question %d" % i, q, 300) for i, q in enumerate(c.get("questions") or [], 1)]
+    texts = []
+    if not email_only:
+        texts = [(k, c.get(k) or "", limits[k]) for k in ("note", "note_alumni", "message", "followup")]
+        texts += [("question %d" % i, q, 300) for i, q in enumerate(c.get("questions") or [], 1)]
+    texts += [(k, c.get(k) or "", lim) for k, lim in email_limits(ws).items()]
     allowed = _numbers("\n".join([facts, "\n".join(profile_lines(person)), ctx]))
     allowed |= {n.replace(",", "") for n in allowed}
     never = [t for t in (ws.cfg.get("claims") or {}).get("never_claim") or [] if str(t).strip()]
@@ -877,6 +928,9 @@ def lint_card(ws, c, person, ctx, facts, others=()):
                 continue  # minutes, days, small counts
             if num not in allowed and plain not in allowed:
                 out.append("%s: the number %s is not in the profile or the fact pack" % (field, num))
+    out += _email_shape(c)
+    if email_only:
+        return out
     if c.get("note") and _bare(c.get("note"), person) == _bare(c.get("note_alumni"), person):
         out.append("note and note_alumni say the same thing")
     for other, oper in others:
@@ -886,7 +940,7 @@ def lint_card(ws, c, person, ctx, facts, others=()):
     return out
 
 
-def _writer_task(ws, p, ctx, facts, rank, n, limits, sign):
+def _writer_task(ws, p, ctx, facts, rank, n, limits, sign, feedback=""):
     sub = p.get("sub") or {}
     scores = ["total %s / 100" % p.get("score")]
     scores += ["%s %s: %s" % (k, sub.get(k, "?"), (p.get("evidence") or {}).get(k, "")) for k in SUBS]
@@ -894,12 +948,19 @@ def _writer_task(ws, p, ctx, facts, rank, n, limits, sign):
         scores.append("team: %s" % p["team_hint"])
     plan = "Premium" if str(_cfg(ws).get("linkedin_plan") or "free").lower() == "premium" else "free account"
     shared = ", ".join(p.get("schools") or []) or "none"
+    em = email_limits(ws)
     head = ("Write the networking card for the person below.\nLimits: each connection note at most %d characters "
-            "(LinkedIn %s); message at most %d characters; follow-up at most %d characters.\nSign-off name: %s. "
+            "(LinkedIn %s); message at most %d characters; follow-up at most %d characters; cold email subject at most "
+            "%d characters, body at most %d, follow-up email at most %d (the email body and follow-up end with "
+            "\"%s\"; the signature is added after it for you).\nSign-off name: %s. "
             "School(s) the person shares with the candidate: %s. Write why, hooks and avoid in %s.\nThis person is "
             "number %d of %d chosen at this company; they may all get a note on the same day, so make the wording "
-            "specific to this person.\n" % (limits[0], plan, limits[1], limits[2], sign or "(the candidate's first name)",
-                                            shared, _language_name(ws), rank, n))
+            "specific to this person.\n" % (limits[0], plan, limits[1], limits[2], em["email_subject"],
+                                            em["email_body"], em["email_followup"], SIGN_OFF,
+                                            sign or "(the candidate's first name)", shared, _language_name(ws),
+                                            rank, n))
+    if feedback:
+        head += "The candidate's feedback on the previous version (follow it, keeping every rule): %s\n" % feedback
     return (head + "\n<scores>\n%s\n</scores>\n\n<context>\n%s\n</context>\n\n<fact_pack>\n%s\n</fact_pack>\n\n%s" % (
         "\n".join(scores), ctx, facts, claude.untrusted("linkedin", "\n".join(profile_lines(p)), pid=p["pid"])))
 
@@ -919,7 +980,7 @@ def cards(ws, company, n=None, log=print):
     ctx = context_text(ws, key)
     facts = fact_pack(ws)
     limits = (note_limit(ws), int(r.get("message_limit") or 700), int(r.get("followup_limit") or 300))
-    schema = card_schema(*limits)
+    schema = card_schema(*limits, email=email_limits(ws))
     system = _prompt("net-writer")
     sign = sign_name(ws)
     done = []
@@ -952,7 +1013,8 @@ def cards(ws, company, n=None, log=print):
                       "followup": c["followup"], "questions": list(c["questions"]), "why": c["why"],
                       "hooks": list(c["hooks"]), "avoid": list(c.get("avoid") or []), "warnings": issues,
                       "created_at": util.stamp(ws.now()), "model": r.get("writer_model") or "opus",
-                      "note_limit": limits[0], "sign_name": sign}
+                      "note_limit": limits[0], "sign_name": sign, "version": 1,
+                      **{k: c[k] for k in EMAIL_FIELDS}}
             util.atomic_write_json(_card_path(ws, p["pid"]), stored, mode=0o600)
             with ws.lock("network"):   # a mark made while the card was being written wins over card_ready
                 allp = _load_people(ws)
@@ -970,6 +1032,59 @@ def cards(ws, company, n=None, log=print):
                                                          summary["cards"]), company=key)
     log("%s: %d cards (%d with warnings), %d failed" % (key, summary["cards"], summary["warnings"], summary["failed"]))
     return summary
+
+
+def _field(warning):
+    return re.split(r"[: ]", str(warning), 1)[0]
+
+
+def write_email(ws, pid, feedback="", log=print):
+    """Add the cold email to a card written before cards had one, or write it again with your feedback: the same
+    writer, asked for the email fields only; the LinkedIn texts stay. The previous card is kept as
+    cards/<pid>.v<N>.json."""
+    old = card(ws, pid)
+    p = person(ws, pid)
+    if not p:
+        raise util.JobPilotError("no person %s" % pid)
+    if not old:
+        raise util.JobPilotError("%s has no card yet; run `jobpilot net cards \"%s\"` first" % (pid, p.get("company")))
+    r = _cfg(ws)
+    ctx = context_text(ws, p.get("company_key"))
+    facts = fact_pack(ws)
+    limits = (note_limit(ws), int(r.get("message_limit") or 700), int(r.get("followup_limit") or 300))
+    task = _writer_task(ws, p, ctx, facts, 1, 1, limits, sign_name(ws), feedback=util.clip(feedback, 1000))
+    task += ("\n\nThis card already has its LinkedIn texts (below, for reference; do not reuse their sentences). Write "
+             "only the cold email fields: email_subject, email_body, email_followup.\n<linkedin_texts>\n%s\n"
+             "</linkedin_texts>" % "\n".join("%s: %s" % (k, old.get(k) or "") for k in ("note", "note_alumni",
+                                                                                     "message")))
+    c, issues, error = None, [], ""
+    with ws.lock("network-ai", wait=False):
+        for attempt in (1, 2):
+            res = claude.run(ws, "net-writer", task, system=_prompt("net-writer"),
+                             schema=email_schema(email_limits(ws)), model=r.get("writer_model") or "opus",
+                             timeout=int(r.get("ai_timeout_seconds") or 600))
+            if res.ok:
+                c = res.output
+                issues = found = lint_card(ws, c, p, ctx, facts, email_only=True)
+                if not issues:
+                    break
+            else:
+                error = res.error
+                found = [res.error]
+            if attempt == 1:
+                task += ("\n\nYour previous draft broke these checks. Fix exactly these and keep everything else "
+                         "true:\n" + "\n".join("- " + i for i in found))
+    if c is None:
+        raise util.JobPilotError("the email was not written (%s); try again later" % (error or "no answer"))
+    version = int(old.get("version") or 1)
+    util.atomic_write_json(_dir(ws) / "cards" / ("%s.v%d.json" % (pid, version)), old, mode=0o600)
+    kept = [w for w in old.get("warnings") or [] if _field(w) not in EMAIL_FIELDS]
+    stored = dict(old, version=version + 1, email_at=util.stamp(ws.now()), email_feedback=util.clip(feedback, 1000),
+                  warnings=kept + issues, **{k: c[k] for k in EMAIL_FIELDS})
+    util.atomic_write_json(_card_path(ws, pid), stored, mode=0o600)
+    ws.event("net", "%s: cold email ready (%s)" % (p.get("name"), p.get("company")), pid=pid)
+    log("%s: email version ready%s" % (pid, " with %d warning(s)" % len(issues) if issues else ""))
+    return stored
 
 
 def run(ws, company, url=None, n=None, n_cards=None, titles=None, client=None, log=print):
@@ -1058,10 +1173,14 @@ def due(ws, now=None):
             action = "no answer for %d days: mark no_response or try someone else" % days
         elif stage == "messaged" and days >= 7:
             action = "no reply for %d days: send the follow-up from the card" % days
+        elif stage == "emailed" and days >= 7:
+            action = ("no reply to your email for %d days: send the follow-up email from the card in the same "
+                      "thread" % days)
         if action:
             out.append({"pid": p["pid"], "name": p.get("name"), "company": p.get("company"), "stage": stage,
                         "days": days, "action": action, "score": p.get("score")})
-    rank = {"chat_done": 0, "replied": 1, "accepted": 2, "messaged": 3, "card_ready": 4, "connect_sent": 5}
+    rank = {"chat_done": 0, "replied": 1, "accepted": 2, "messaged": 3, "emailed": 3, "card_ready": 4,
+            "connect_sent": 5}
     out.sort(key=lambda d: (rank.get(d["stage"], 9), -(d["score"] or 0)))
     return out
 
@@ -1110,6 +1229,11 @@ def cmd_net(ws, args):
     if a == "mark":
         p = mark(ws, args.pid, args.event, note=args.note or "")
         return out(args, p, "%s is now %s" % (p["pid"], p["stage"]))
+    if a == "email":
+        c = write_email(ws, args.pid, feedback=args.feedback or "", log=log)
+        sign = "\n".join(email_signature(ws))
+        return out(args, c, "Subject: %s\n\n%s\n%s\n\n-- follow-up after a week, in the same thread --\n%s\n%s" % (
+            c["email_subject"], c["email_body"], sign, c["email_followup"], sign))
     if a == "remove":
         c = remove_company(ws, args.company, args.reason or "")
         return out(args, c, "removed %s" % c.get("name"))
@@ -1125,7 +1249,7 @@ def cmd_net(ws, args):
 
 
 def register(sub, add):
-    sp = add("net", cmd_net, help="alumni referral finder: find, score, cards, run, list, show, mark, due")
+    sp = add("net", cmd_net, help="alumni referral finder: find, score, cards, email, run, list, show, mark, due")
     nsub = sp.add_subparsers(dest="net_action", required=True)
 
     def q(name, **kw):
@@ -1144,6 +1268,9 @@ def register(sub, add):
     p = q("cards", help="outreach drafts for the best-scored people")
     p.add_argument("company")
     p.add_argument("--n", type=int)
+    p = q("email", help="the cold email for a card that has none, or again with --feedback (you send it yourself)")
+    p.add_argument("pid")
+    p.add_argument("--feedback", help="what to change in the email")
     p = q("run", help="find, score and write cards in one go")
     p.add_argument("company")
     p.add_argument("--url")

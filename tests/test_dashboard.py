@@ -224,9 +224,22 @@ class DashboardTest(unittest.TestCase):
                             for e in feed))
         self.assertTrue(any(e["data"].get("category") == "owner_reply" and e["data"].get("minor") for e in feed))
 
+    def test_cold_email_on_cards(self):
+        people = {p["name"]: p for p in self.get("/api/referrals")["people"]}
+        sofia = self.get("/api/person?id=" + people["Sofia Alvarez"]["pid"])
+        self.assertTrue(sofia["card"]["email_body"].endswith("Best regards,"))
+        self.assertEqual(sofia["email_signature"], ["Jordan Rivera"])
+        self.assertNotIn("email_body", self.get("/api/person?id=" + people["Priya Natarajan"]["pid"])["card"])
+        self.assertEqual(self.get("/api/session")["referrals"]["email_limits"]["email_body"], 1500)
+        hannah = people["Hannah Kim"]
+        self.assertEqual(hannah["stage"], "emailed")
+        status, res = self.post("net/mark", {"pid": sofia["pid"], "event": "email_sent"})
+        self.assertEqual((status, res["person"]["stage"]), (200, "emailed"))
+
     def test_demo_turns_paid_tasks_off(self):
         for name, body in (("run/daily", {}), ("tailor/start", {"posting_id": self.ready_ids(1)[0]}),
-                           ("net/find", {"company": "Atlas Mapping"}), ("net/cards", {"company": "Atlas Mapping"})):
+                           ("net/find", {"company": "Atlas Mapping"}), ("net/cards", {"company": "Atlas Mapping"}),
+                           ("net/email", {"pid": "P0003"})):
             status, res = self.post(name, body)
             self.assertEqual(status, 409, name)
             self.assertIn("demo", res["error"])
